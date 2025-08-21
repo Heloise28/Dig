@@ -1,0 +1,9 @@
+
+Before starting a game session. A window will ask do you wanna set a timer for each player to think and do you wanna al For each player, say. low players to see The cards played history of this game.
+
+Computer Challenge mode and Computer Casual mode and Multiplayer mode.
+
+Computer Challenge mode, One human player into highest level computer player and they start with their zero score and after 12 games. The session is over. And there will be a leaderboard for the players remaining score. The leaderboard shows the players alias and the score.
+
+
+

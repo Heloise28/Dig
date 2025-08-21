@@ -1,0 +1,24 @@
+{
+  "name": "dig-card-game",
+  "version": "1.0.0",
+  "description": "A web-based implementation of the Dig card game (挖坑)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "node test/test.js",
+    "dev": "echo 'Development server setup will be added later'",
+    "build": "echo 'Build process will be added later'",
+    "deploy": "echo 'Deploy process will be added later'"
+  },
+  "keywords": [
+    "card-game",
+    "dig",
+    "挖坑",
+    "trick-taking",
+    "web-game"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

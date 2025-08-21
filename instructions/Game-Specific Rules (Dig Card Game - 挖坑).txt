@@ -1,0 +1,39 @@
+Game-Specific Rules (Dig Card Game - 挖坑)
+
+**Game Overview:**
+- 3-player trick-taking game using 52-card deck (no jokers)
+- Each player gets 16 cards, 4 "bottom cards" go to digger
+- Custom card ranking: 3 > 2 > A > K > Q > J > 10 > 9 > 8 > 7 > 6 > 5 > 4
+
+**Bidding System:**
+- Counter-clockwise bidding: 1, 2, or 3 points
+- Player with 4♥ bids first (or 5♥, 6♥, etc. if no 4♥)
+- Highest bidder becomes "digger" (1v2 team format)
+- Default: 4♥ holder digs 1 point if no bids
+
+**Card Play Mechanics:**
+- **Valid combinations:** Singles, Pairs, Triples, Quads, Straights (4-K only), Pair/Triple/Quad straights
+- **No suit ranking** - only card values matter
+- **Must follow with higher combination** or pass
+- **First to empty hand** wins for their team
+
+**Turns and Playing Orders**
+- Players will be numbered 1,2,3, the first to join the game will be 1 and the second will be 2 and so forth.
+- Player with 4♥ plays first.
+- And the order of the next player to play is 1->2->3->1
+
+**Scoring:**
+- Digger wins: each opponent pays digger the bid points
+- Digger loses: digger pays each opponent the bid points
+
+**AI Implementation Requirements:**
+- **Bidding AI:** Evaluate hand strength for optimal bid decisions
+- **Play AI:** Calculate optimal card plays based on remaining cards
+- **Memory tracking:** Track played cards for probability calculations
+- **Team coordination:** AI opponents must coordinate against digger
+- **Character personalities:** Different AI characters with unique play styles and difficulty levels
+- Start with local single-player version
+- Add local multiplayer (multiple browser tabs)
+- Add database persistence
+- Deploy to Railway with environment-specific configs
+- Use npm scripts for common tasks (test, dev, build, deploy)
