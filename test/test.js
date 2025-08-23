@@ -1,6 +1,13 @@
 import { Card } from '../models/Card.js';
 import { Deck } from '../models/Deck.js';
+import { HumanPlayer } from '../models/HumanPlayer.js';
+import { CardCombination } from '../models/CardCombination.js';
+import { Suit } from '../models/enums.js';
 
+
+
+
+/*
 // Test Card class functionality
 console.log('=== Testing Card Class ===');
 
@@ -9,10 +16,10 @@ const card2 = new Card('K', 'spades');
 const card3 = new Card('2', 'diamonds');
 const joker1 = new Card('Joker', 'red');
 
-console.log('Card 1 (Ace):', card1.toString(), 'Value:', card1.numericalValue);
-console.log('Card 2 (King):', card2.toString(), 'Value:', card2.numericalValue);
-console.log('Card 3 (Two):', card3.toString(), 'Value:', card3.numericalValue);
-console.log('Joker:', joker1.toString(), 'Value:', joker1.numericalValue);
+console.log('Card 1 (Ace):', card1.toString(), 'Value:', card1.value);
+console.log('Card 2 (King):', card2.toString(), 'Value:', card2.value);
+console.log('Card 3 (Two):', card3.toString(), 'Value:', card3.value);
+console.log('Joker:', joker1.toString(), 'Value:', joker1.value);
 
 console.log('Ace vs King:', card1.compareTo(card2));
 console.log('King vs Two:', card2.compareTo(card3));
@@ -83,3 +90,25 @@ console.log('Deck size after removing Aces:', testDeck.size());
 
 console.log('Final deck size:', deck54.size());
 console.log('Is deck empty?', deck54.isEmpty());
+
+*/
+
+
+
+
+
+console.log('=== Testing Human Player Class ===');
+
+// 54-card deck (with jokers)
+const deck54 = Deck.createStandardDeck();
+deck54.flipDeck();
+deck54.shuffle();
+console.log('54-card deck created:', deck54.toString());
+
+const playerJohn = new HumanPlayer('John', 1);
+playerJohn.addCards(deck54.dealTopCards(16));
+//console.log(playerJohn.getHand().peek().toShortString());
+console.log(playerJohn.toString());
+
+
+

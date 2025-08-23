@@ -2,6 +2,7 @@
 // Rules applied: debug logs & comments, modular design, i18n consistency
 
 import { Card } from './Card.js';
+import { Suit } from './enums.js';
 
 /**
  * Deck class representing a collection of playing cards
@@ -33,7 +34,7 @@ export class Deck {
     this.cards.push(card);
     this.playSoundEffect('addCard');
     
-    console.log(`➕ Added card: ${card.toString()}`);
+    //console.log(`➕ Added card: ${card.toString()}`);
     return this;
   }
 
@@ -55,7 +56,7 @@ export class Deck {
     this.cards.push(...cards);
     this.playSoundEffect('addCard');
     
-    console.log(`➕ Added ${cards.length} cards to deck`);
+    //console.log(`➕ Added ${cards.length} cards to deck`);
     return this;
   }
 
@@ -76,7 +77,7 @@ export class Deck {
     }
     
     const dealtCard = this.cards.splice(index, 1)[0];
-    this.playSoundEffect('deal');
+    
     
     console.log(`🎴 Dealt specific card: ${dealtCard.toString()}`);
     return dealtCard;
@@ -100,6 +101,8 @@ export class Deck {
       }
     });
     
+    this.playSoundEffect('deal');
+
     console.log(`🎴 Dealt ${dealtCards.length} specific cards`);
     return dealtCards;
   }
@@ -159,7 +162,7 @@ export class Deck {
     const dealtCard = this.cards.shift();
     this.playSoundEffect('deal');
     
-    console.log(`⬆️ Dealt top card: ${dealtCard.toString()}`);
+    //console.log(`⬆️ Dealt top card: ${dealtCard.toString()}`);
     return dealtCard;
   }
 
@@ -324,7 +327,7 @@ export class Deck {
   removeJokers() {
     const jokers = [];
     this.cards = this.cards.filter(card => {
-      if (card.rank === 'Joker' || card.rank === 'JOKER') {
+      if (card.rank === 'Red' || card.rank === 'Black') {
         jokers.push(card);
         return false;
       }
@@ -398,6 +401,15 @@ export class Deck {
     return removedCards;
   }
 
+  flipDeck() {
+    for (let i=0; i<this.cards.length; i++) {
+      this.cards[i].flip();
+    }
+    console.log(`🔄 Deck flipped. Face up: ${this.cards[0].isFaceUp}`);
+
+    return this;
+  }
+
   /**
    * Placeholder for sound effect playback
    * @param {string} effectType - Type of sound effect
@@ -430,18 +442,18 @@ export class Deck {
     
     const deck = new Deck();
     const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-    const suits = ['spades', 'hearts', 'diamonds', 'clubs'];
+    const suits = [Suit.SPADES, Suit.HEARTS, Suit.DIAMONDS, Suit.CLUBS];
     
     // Add standard 52 cards
     suits.forEach(suit => {
       ranks.forEach(rank => {
-        deck.addCard(new Card(rank, suit));
+        deck.addCard(new Card(rank, suit, false));
       });
     });
     
     // Add 2 jokers (Red and Black)
-    deck.addCard(new Card('Joker', 'red'));
-    deck.addCard(new Card('Joker', 'black'));
+    deck.addCard(new Card('Black', Suit.JOKER, false));
+    deck.addCard(new Card('Red', Suit.JOKER, false));
     
     console.log(`✅ Standard deck created with ${deck.size()} cards (52 regular + 2 jokers)`);
     return deck;
@@ -456,11 +468,11 @@ export class Deck {
     
     const deck = new Deck();
     const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-    const suits = ['spades', 'hearts', 'diamonds', 'clubs'];
+    const suits = [Suit.SPADES, Suit.HEARTS, Suit.DIAMONDS, Suit.CLUBS];
     
     suits.forEach(suit => {
       ranks.forEach(rank => {
-        deck.addCard(new Card(rank, suit));
+        deck.addCard(new Card(rank, suit, false));
       });
     });
     

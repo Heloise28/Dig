@@ -4,14 +4,27 @@
 /**
  * Card class representing a playing card
  */
+
+import { Suit } from './enums.js';
+
+
 export class Card {
-  constructor(rank, suit) {
-    //ranks are strings A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Joker
-    //suits are strings spades, hearts, diamonds, clubs
+
+  //rank is string, suit is enum Suit
+  //Black is little joker, Red is big joker
+  constructor(rank, suit, isFaceUP) {
+    //ranks are strings A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Black, Red
     this.rank = rank;
-    this.suit = suit;
-    this.isFaceUp = false;
-    this.numericalValue = this.calculateNumericalValue();
+
+    if (suit !== Suit.MIXED && suit !== Suit.NONE) {
+      this.suit = suit;
+    } else {
+      throw new Error('Invalid suit for a single card');
+    }
+
+    this.isFaceUp = isFaceUP;
+    this.value = this.calculateValue();
+    this.isSelected = false;
     
     // Sound effect placeholders for future implementation
     this.soundEffects = {
@@ -20,17 +33,24 @@ export class Card {
       play: null
     };
     
-    console.log(`🃏 Card created: ${this.rank} of ${this.suit} (Value: ${this.numericalValue})`);
+    
+    if (suit === Suit.JOKER) {
+      console.log(`🃏 Card created: ${this.rank} ${this.suit} (Value: ${this.value})`);
+    } else {
+      console.log(`🃏 Card created: ${this.rank} of ${this.suit} (Value: ${this.value})`);
+    }
   }
 
   /**
    * Calculate standard numerical value for cards
    * Standard values: A=1, 2=2, 3=3, ..., 10=10, J=11, Q=12, K=13, Joker=14
    */
-  calculateNumericalValue() {
+  calculateValue() {
     // Handle jokers first
-    if (this.rank === 'Joker' || this.rank === 'JOKER') {
+    if (this.rank === 'Black') {
       return 14;
+    } else if (this.rank === 'Red') {
+      return 15;
     }
     
     const rankValues = {
@@ -46,15 +66,30 @@ export class Card {
   }
 
   /**
+   * Set a new rank for the card and recalculate its numerical value
+   * arbitrary range -1000 to 1000
+   * @param {string} newRank - New rank for the card
+  * @throws Will throw an error if the new rank is invalid 
+  */
+  setCardValue(newValue) {
+    if (typeof newValue !== 'number' || newValue < -1000 || newValue > 1000) {
+      throw new Error('Card value must be a number between -1000 and 1000');
+    }
+    this.value = newValue;
+    console.log(`🔢 Card ${this.toString()} value set to ${this.nume}`);
+    return this;
+  }
+
+  /**
    * Flip the card (face up to face down or vice versa)
    */
   flip() {
     this.isFaceUp = !this.isFaceUp;
     
     // Placeholder for flip sound effect
-    this.playSoundEffect('flip');
+    //this.playSoundEffect('flip');
     
-    console.log(`🔄 Card ${this.toString()} flipped. Face up: ${this.isFaceUp}`);
+    //console.log(`🔄 Card ${this.toString()} flipped. Face up: ${this.isFaceUp}`);
     return this;
   }
 
@@ -82,6 +117,15 @@ export class Card {
     return this;
   }
 
+  selectCard() {
+    this.isSelected = true;
+  }
+
+  deselectCard() {
+    this.isSelected = false;
+  }
+
+
   /**
    * Get card display string
    */
@@ -91,10 +135,12 @@ export class Card {
     }
     
     // Handle jokers specially
-    if (this.rank === 'Joker' || this.rank === 'JOKER') {
-      return `${this.suit} Joker`;
+    if (this.rank === 'Black') {
+      return `${this.rank} Joker`;
+    } else if (this.rank === 'Red') {
+      return `${this.rank} Joker`;
     }
-    
+
     return `${this.rank} of ${this.suit}`;
   }
 
@@ -107,8 +153,10 @@ export class Card {
     }
     
     // Handle jokers specially
-    if (this.rank === 'Joker' || this.rank === 'JOKER') {
-      return `${this.suit}J`;
+    if (this.rank === 'Black') {
+      return `j`;
+    } else if (this.rank === 'Red') {
+      return `J`;
     }
     
     return `${this.rank}${this.suit.charAt(0).toUpperCase()}`;
@@ -180,10 +228,18 @@ export class Card {
     };
     
     const suitMap = {
-      'spades': 'spades',
-      'hearts': 'hearts', 
-      'diamonds': 'diamonds',
-      'clubs': 'clubs'
+      /*
+      The problem is that you are using an object key 
+      without quotes or brackets, which is invalid 
+      syntax in JavaScript unless Suit.SPADES is a 
+      variable; you should use computed property 
+      syntax for Suit.SPADES.
+      */
+      [Suit.SPADES]: 'spades',
+      [Suit.HEARTS]: 'hearts', 
+      [Suit.DIAMONDS]: 'diamonds',
+      [Suit.CLUBS]: 'clubs',
+      [Suit.JOKER]: 'joker' // Just in case
     };
     
     const rank = rankMap[this.rank] || this.rank;

@@ -1,3 +1,6 @@
+import { Deck } from './Deck.js';
+
+
 export class Player {
   constructor(name, isHuman, seatNumber) {
     this.name = name;
@@ -38,7 +41,8 @@ export class Player {
   }
 
   //Abstract method
-  playCard(card) {
+  playSelectedCards() {
+
   }
 
   //returns a boolean
@@ -52,10 +56,19 @@ export class Player {
 
   //Abstract method
   bid(playerBid) {
+
   }
 
   toString() {
-    return `Player: ${this.name}, Seat: ${this.seatNumber}, Hand: ${this.hand.toString()}`
+    let handShortString = '';
+    this.hand.cards.forEach((card)=> {
+      handShortString += card.toShortString();
+      handShortString += ' ';
+    });
+    
+    return `Player: ${this.name}, 
+      Seat: ${this.seatNumber}, 
+      Hand: ${handShortString}`;
   }
   
 }
