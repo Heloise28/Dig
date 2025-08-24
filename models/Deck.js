@@ -61,6 +61,21 @@ export class Deck {
   }
 
   /**
+   * @return array of selected cards
+   */
+  getSelectedCards() {
+    // Find all selected cards
+    const selectedCards = this.cards.filter(card => card.isSelected);
+    
+    if (selectedCards.length === 0) {
+      console.log('No selected cards');
+      return [];
+    }
+
+    return selectedCards;
+  }
+
+  /**
    * Deal a specific card from the deck
    * @param {Card} card - Specific card to deal
    * @returns {Card|null} The dealt card or null if not found
@@ -105,6 +120,30 @@ export class Deck {
 
     console.log(`🎴 Dealt ${dealtCards.length} specific cards`);
     return dealtCards;
+  }
+
+  /**
+   * Deal all selected cards from the deck
+   * @returns {Card[]} Array of dealt selected cards (empty array if none selected)
+   */
+  dealSelectedCards() {
+    // Find all selected cards
+    const selectedCards = this.cards.filter(card => card.isSelected);
+    
+    if (selectedCards.length === 0) {
+      console.log('No selected cards to deal');
+      return [];
+    }
+    
+    // Remove selected cards from deck (iterate backwards to avoid index issues)
+    for (let i = this.cards.length - 1; i >= 0; i--) {
+      if (this.cards[i].isSelected) {
+        this.cards.splice(i, 1);
+      }
+    }
+    
+    console.log(`🎴 Dealt ${selectedCards.length} selected card(s): ${selectedCards.map(card => card.toShortString()).join(', ')}`);
+    return selectedCards;
   }
 
   /**
@@ -224,6 +263,14 @@ export class Deck {
     return this;
   }
 
+  sortByValueAsc() {
+    this.cards.sort((a, b) => a.value - b.value);
+  } 
+
+  sortByValueDesc() {
+    this.cards.sort((a, b) => b.value - a.value);
+  }
+
   /**
    * Peek at the top card without removing it
    * @returns {Card|null} Top card or null if deck is empty
@@ -286,12 +333,95 @@ export class Deck {
    * @param {Card} card - Card to find
    * @returns {number} Index of card or -1 if not found
    */
-  findCard(card) {
+  findIndexOfCard(card) {
     if (!(card instanceof Card)) {
       return -1;
     }
     return this.cards.findIndex(c => c.equals(card));
   }
+
+  //for testing in console
+  selectCardByNotation(notation) {
+  // Handle empty or invalid input
+  if (!notation || typeof notation !== 'string') {
+    console.log('find card:  Invalid input');
+    return;
+  }
+  
+  const input = notation.trim().toLowerCase();
+  
+  if (input === '') {
+    console.log('find card:  Invalid input');
+    return;
+  }
+  
+  let targetRank, targetSuit;
+  
+  // Handle jokers
+  if (input === 'j') {
+    targetRank = 'Black';
+    targetSuit = Suit.JOKER;
+  } else if (input === 'J') {
+    targetRank = 'Red';
+    targetSuit = Suit.JOKER;
+  } else if (input.length >= 2) {
+    // Parse rank and suit for regular cards
+    const rank = input.slice(0, -1);
+    const suitChar = input.slice(-1);
+    
+    // Map rank notation to actual rank
+    const rankMap = {
+      'a': 'A',
+      '2': '2', 
+      '3': '3', 
+      '4': '4', 
+      '5': '5',
+      '6': '6', 
+      '7': '7', 
+      '8': '8', 
+      '9': '9',
+      '10': '10',
+      'j': 'J',
+      'q': 'Q',
+      'k': 'K'
+    };
+    
+    // Map suit notation to actual suit
+    const suitMap = {
+      'h': Suit.HEARTS,
+      'd': Suit.DIAMONDS,
+      'c': Suit.CLUBS,
+      's': Suit.SPADES
+    };
+    
+    targetRank = rankMap[rank];
+    targetSuit = suitMap[suitChar];
+    
+    if (!targetRank || !targetSuit) {
+      console.log('find card:  Invalid input');
+      return;
+    }
+  } else {
+    console.log('find card: Invalid input');
+    return;
+  }
+  
+  // Find the card in the deck
+  const targetCard = new Card(targetRank, targetSuit, true);
+  const cardIndex = this.findIndexOfCard(targetCard);
+  
+  if (cardIndex !== -1) {
+    this.cards[cardIndex].selectCard();
+    console.log(`Selected: ${this.cards[cardIndex].toShortString()}`);
+  } else {
+    console.log('find card: card not found');
+  }
+}
+
+
+
+
+
 
   /**
    * Check if deck contains a specific card
@@ -299,7 +429,7 @@ export class Deck {
    * @returns {boolean} True if card is in deck
    */
   contains(card) {
-    return this.findCard(card) !== -1;
+    return this.findIndexOfCard(card) !== -1;
   }
 
   /**
@@ -478,16 +608,6 @@ export class Deck {
     
     console.log(`✅ 52-card deck created with ${deck.size()} cards`);
     return deck;
-  }
-
-  /**
-   * Create a deck for Dig card game (52 cards, no jokers)
-   * This is an alias for create52CardDeck() for clarity in game-specific contexts
-   * @returns {Deck} New deck with 52 cards suitable for Dig game
-   */
-  static createDigGameDeck() {
-    console.log('🕳️ Creating Dig game deck (52 cards, no jokers)...');
-    return Deck.create52CardDeck();
   }
 
   /**
