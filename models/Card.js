@@ -9,20 +9,46 @@ import { Suit } from './enums.js';
 
 
 export class Card {
-
+  //ranks are strings A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Black, Red
   //rank is string, suit is enum Suit
   //Black is little joker, Red is big joker
-  constructor(rank, suit, isFaceUP) {
-    //ranks are strings A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K, Black, Red
-    this.rank = rank;
-
-    if (suit !== Suit.MIXED && suit !== Suit.NONE) {
-      this.suit = suit;
-    } else {
-      throw new Error('Invalid suit for a single card');
+  constructor(rank, suit, isFaceUp) {
+    
+    // Validate rank
+    const validRanks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'Black', 'Red'];
+    if (!rank || typeof rank !== 'string' || !validRanks.includes(rank)) {
+      throw new Error(`Invalid rank: ${rank}. Must be one of: ${validRanks.join(', ')}`);
     }
+    
+    // Validate suit
+    if (!suit || !Suit.isValid(suit)) {
+      throw new Error(`Invalid suit: ${suit}.`);
+    }
+    
+    // Special validation for jokers
+    if (suit === Suit.JOKER) {
+      if (rank !== 'Black' && rank !== 'Red') {
+        throw new Error(`Invalid joker rank: ${rank}. Jokers must have rank 'Black' or 'Red'`);
+      }
+    } else if (rank === 'Black' || rank === 'Red') {
+      throw new Error(`Invalid combination: ${rank} rank can only be used with Joker suit`);
+    }
+    
+    // Validate suit restrictions
+    if (suit === Suit.MIXED || suit === Suit.NONE) {
+      throw new Error('Invalid suit for a single card: MIXED and NONE are not allowed');
+    }
+    
+    // Validate isFaceUp
+    if (typeof isFaceUp !== 'boolean') {
+      throw new Error(`Invalid isFaceUp value: ${isFaceUp}. Must be true or false`);
+    }
+    
+    // All validations passed, set properties
+    this.rank = rank;
+    this.suit = suit;
 
-    this.isFaceUp = isFaceUP;
+    this.isFaceUp = isFaceUp;
     this.value = this.calculateValue();
     this.isSelected = false;
     
@@ -33,13 +59,31 @@ export class Card {
       play: null
     };
     
-    
+    /*
     if (suit === Suit.JOKER) {
       console.log(`🃏 Card created: ${this.rank} ${this.suit} (Value: ${this.value})`);
     } else {
       console.log(`🃏 Card created: ${this.rank} of ${this.suit} (Value: ${this.value})`);
     }
+    */
   }
+
+  getRank() {
+    return this.rank;
+  }
+
+  getSuit() {
+    return this.suit;
+  }
+
+  getValue() {
+    return this.value;
+  }
+
+  get isSelected() {
+    return this.isSelected;
+  }
+
 
   /**
    * Calculate standard numerical value for cards
@@ -76,7 +120,7 @@ export class Card {
       throw new Error('Card value must be a number between -1000 and 1000');
     }
     this.value = newValue;
-    console.log(`🔢 Card ${this.toString()} value set to ${this.nume}`);
+    console.log(`🔢 Card ${this.toShortString()} value set to ${this.value}`);
     return this;
   }
 
@@ -117,12 +161,20 @@ export class Card {
     return this;
   }
 
+  faceIsUp() {
+    return this.isFaceUp;
+  }
+
   selectCard() {
     this.isSelected = true;
   }
 
   deselectCard() {
     this.isSelected = false;
+  }
+
+  isSelected() {
+    return this.isSelected;
   }
 
 

@@ -5,9 +5,14 @@ const CombType = Object.freeze({
   STRAIGHT: 'Straight',
   QUAD: 'Quad',
   PAIR_STRAIGHT: 'PairStraight',
-  PAIR_TRIPLE: 'PairTriple',
-  PAIR_QUAD: 'PairQuad',
+  TRIPLE_STRAIGHT: 'TripleStraight',
+  QUAD_STRAIGHT: 'QuadStraight',
   NONE: 'None',
+
+  isValid(value) {
+    return Object.values(this).includes(value);
+  },
+
 });
 
 const Suit = Object.freeze({
@@ -18,6 +23,18 @@ const Suit = Object.freeze({
   JOKER: 'Joker', // For Joker cards
   MIXED: 'Mixed', // For combinations with mixed suits
   NONE: 'None', // For no suit
+
+  isValid(value) {
+    return Object.values(this).includes(value);
+  },
+
 });
 
+
+
+
+
 export { CombType, Suit };
+
+
+

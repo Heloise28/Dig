@@ -146,6 +146,28 @@ export class Deck {
     return selectedCards;
   }
 
+   /**
+   * Remove all selected cards from the deck
+   * @returns {Card[]} Array of dealt selected cards (empty array if none selected)
+   */
+  removeSelectedCards() {
+    // Find all selected cards
+    const selectedCards = this.cards.filter(card => card.isSelected);
+    
+    if (selectedCards.length === 0) {
+      console.log('No selected cards to remove');
+    }
+    
+    // Remove selected cards from deck (iterate backwards to avoid index issues)
+    for (let i = this.cards.length - 1; i >= 0; i--) {
+      if (this.cards[i].isSelected) {
+        this.cards.splice(i, 1);
+      }
+    }
+    
+    console.log(`🎴 Removed ${selectedCards.length} selected card(s): ${selectedCards.map(card => card.toShortString()).join(', ')}`);
+  }
+
   /**
    * Deal a random card from the deck
    * @returns {Card|null} Random card or null if deck is empty
@@ -340,6 +362,18 @@ export class Deck {
     return this.cards.findIndex(c => c.equals(card));
   }
 
+  /**
+   * Find a unselected card in the deck
+   * @param {Card} card - Card to find
+   * @returns {number} Index of card or -1 if not found
+   */
+  findIndexOfCardUnselected(card) {
+    if (!(card instanceof Card)) {
+      return -1;
+    }
+    return this.cards.findIndex(c => c.equals(card) && !c.isSelected);
+  }
+
   //for testing in console
   selectCardByNotation(notation) {
   // Handle empty or invalid input
@@ -408,13 +442,13 @@ export class Deck {
   
   // Find the card in the deck
   const targetCard = new Card(targetRank, targetSuit, true);
-  const cardIndex = this.findIndexOfCard(targetCard);
+  const cardIndex = this.findIndexOfCardUnselected(targetCard);
   
   if (cardIndex !== -1) {
     this.cards[cardIndex].selectCard();
     console.log(`Selected: ${this.cards[cardIndex].toShortString()}`);
   } else {
-    console.log('find card: card not found');
+    console.log('find card: card not found or already selected');
   }
 }
 
@@ -538,6 +572,16 @@ export class Deck {
     console.log(`🔄 Deck flipped. Face up: ${this.cards[0].isFaceUp}`);
 
     return this;
+  }
+
+  deselectDeck() {
+    // Deselected cards from deck (iterate backwards to avoid index issues)
+    for (let i = this.cards.length - 1; i >= 0; i--) {
+      if (this.cards[i].isSelected) {
+        this.cards[i].deselectCard();
+      }
+    }
+
   }
 
   /**

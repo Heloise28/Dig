@@ -2,7 +2,8 @@ import { Card } from '../models/Card.js';
 import { Deck } from '../models/Deck.js';
 import { HumanPlayer } from '../models/HumanPlayer.js';
 import { CardCombination } from '../models/CardCombination.js';
-import { Suit } from '../models/enums.js';
+import { Suit, CombType } from '../models/enums.js';
+import { DigGameEngine } from '../models/DigGameEngine.js';
 
 
 
@@ -97,18 +98,97 @@ console.log('Is deck empty?', deck54.isEmpty());
 
 
 
-console.log('=== Testing Human Player Class ===');
+//the following is the functions to select cards in console
+//in order to test
+import readline from 'readline';
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+function askQuestion(question) {
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      resolve(answer);
+    });
+  });
+}
+
+async function askForCardSelection(player) {
+  while (true) {
+    const notation = await askQuestion('Enter card notation (or "quit" to exit): ');
+    
+    if (notation.toLowerCase() === 'q') {
+      break;
+    }
+    
+    player.selectCardByNotation(notation);
+  }
+}
+
+
+
+console.log('=== Testing ===');
 
 // 54-card deck (with jokers)
+/*
 const deck54 = Deck.createStandardDeck();
 deck54.flipDeck();
 deck54.shuffle();
 console.log('54-card deck created:', deck54.toString());
+*/
 
-const playerJohn = new HumanPlayer('John', 1);
-playerJohn.addCards(deck54.dealTopCards(16));
+const digDeck = DigGameEngine.createDeckForDig();
+digDeck.flipDeck();
+digDeck.shuffle();
+console.log('Dig deck created:', digDeck.toString());
+
+const john = new HumanPlayer('John', 1);
+john.addCards(digDeck.dealTopCards(16));
+
+john.addCards([
+  new Card("4", Suit.CLUBS, true),
+  new Card("4", Suit.CLUBS, true),
+  new Card("5", Suit.CLUBS, true),
+  new Card("5", Suit.CLUBS, true),
+  new Card("6", Suit.CLUBS, true),
+  new Card("6", Suit.CLUBS, true),
+]);
+
+john.sortHandAsc();
 //console.log(playerJohn.getHand().peek().toShortString());
-console.log(playerJohn.toString());
+console.log(john.toString());
+
+let johnPlayed;
+let i = 0;
+
+let typeOfTurn = CombType.PAIR;
+let valueToBeat = 10;
+
+while (john.getHandSize() > 0 && i < 3) {
+    await askForCardSelection(john);
+    let selectedComb = john.getSelectedCards();
+    DigGameEngine.evaluateCardCombination(selectedComb, typeOfTurn, valueToBeat);
+    if (selectedComb.isValidCombination()) {
+        typeOfTurn = selectedComb.getType();
+        valueToBeat = selectedComb.getValue();
+        johnPlayed = selectedComb;
+        john.loseSelectedCards();
+        console.log('John plays: ' + johnPlayed);
+        console.log(john.toString());
+    } else {
+        console.log('can\'t play this!');
+        john.getHand().deselectDeck();
+    }
+    i++;
+}
+
+rl.close();
+
+
+
+
 
 
 

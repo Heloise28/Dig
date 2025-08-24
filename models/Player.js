@@ -1,3 +1,4 @@
+import { CardCombination } from './CardCombination.js';
 import { Deck } from './Deck.js';
 
 
@@ -40,11 +41,39 @@ export class Player {
     this.hand.clear();
   }
 
-  //Abstract method
-  playSelectedCards() {
-
+  sortHandAsc() {
+    this.hand.sortByValueAsc();
   }
 
+  sortHandDesc() {
+    this.hand.sortByValueDesc();
+  }
+
+  //for testing in console
+  selectCardByNotation(notation) {
+    this.hand.selectCardByNotation(notation);
+  }
+
+  /**
+   * @return a CardCombination of selected cards
+   * to be examined by game engine.
+   */
+  getSelectedCards() {
+    let selectedCards = this.hand.getSelectedCards();
+    return new CardCombination(selectedCards);
+  }
+
+  /**
+   * @returns array of selected cards (removed from a player's hand)
+   */  
+  playSelectedCards() {
+    return this.hand.dealSelectedCards();
+  }
+
+  loseSelectedCards() {
+    this.hand.removeSelectedCards();
+  }
+  
   //returns a boolean
   isPlayerTurn() {
     return this.isTurn;
