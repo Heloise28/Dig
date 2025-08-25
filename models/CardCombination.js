@@ -7,20 +7,21 @@ export class CardCombination {
 
   /**
    * @param {Array} cards - Array of Card objects
+   * SORT by value ASC by default!!
    */
   constructor(cards) {
+    cards.sort((a, b) => a.value - b.value);
     this.cards = cards;
     this.type = CombType.NONE;
-    this.value = 0; // The value of the combination, e.g., highest card value
+    this.value = 0; // The value of the combination. 0 by default, handled by each specific game rule.
     this.size = cards.length;
+    this.straightSize = 0;
     this.suit = Suit.NONE; 
     this.isValid = false; // Whether the combination is valid  }
   }
 
-
-  
   getSize() {
-    return this.cards.length;
+    return this.size;
   }
 
   getValue() {
@@ -35,10 +36,21 @@ export class CardCombination {
     return this.suit;
   }
 
+  getCards() {
+    return this.cards;
+  }
+
+  getFirstCardValue() {
+    return this.cards[0].getValue();
+  }
+
   isValidCombination() {
     return this.isValid;
   }
 
+  getStraightSize () {
+    return this.straightSize;
+  }
 
   setValue(newValue) {
     if (typeof newValue !== 'number' || newValue < -1000 || newValue > 1000) {
@@ -62,11 +74,19 @@ export class CardCombination {
     this.suit = suit;
   }
 
-  varify(validity) {
+  verify(validity) {
     if (typeof validity !== 'boolean') {
       throw new Error(`Invalid validity value: ${validity}. Must be true or false`);
     }
     this.isValid = validity;
+  }
+
+  setStraightSize (newSize) {
+    if (typeof newSize !== 'number' || newSize < -100 || newSize > 100) {
+      throw new Error('Card Combination size must be a number between -100 and 100');
+    }
+    this.straightSize = newSize;
+    return this;
   }
 
   getLargestCardValue() {
@@ -99,8 +119,6 @@ export class CardCombination {
       return false;
     }
 
-    this.cards.sortByValueAsc();
-
     // Check if each card is exactly 1 more than the previous
     for (let i = 1; i < this.size; i++) {
       if (this.cards[i].getValue() !== this.cards[i-1].getValue() + 1) {
@@ -122,6 +140,18 @@ export class CardCombination {
     return this.cards.every(card => card.getRank() === firstRank);
   }
 
+  isSameValue() {
+    if (this.cards.length === 0) {
+      return false;
+    }
+    
+    // Get the rank of the first card
+    const firstValue = this.cards[0].getValue();
+    
+    // Check if all cards have the same rank
+    return this.cards[this.cards.length-1].getValue() === this.cards[0].getValue();
+  }
+
   isSameSuit() {
     if (this.cards.length === 0) {
       return false;
@@ -136,7 +166,15 @@ export class CardCombination {
 
 
   toString() {
-    return `Combination: Type=${this.type}, Value=${this.value}, Cards=[${this.cards.map(card => card.toString()).join(', ')}]`;
+    return `Combination: Type: ${this.type}, Value: ${this.value}, Cards: [${this.cards.map(card => card.toShortString()).join(', ')}]`;
+  }
+
+  toShortString() {
+    return `[${this.cards.map(card => card.toShortString()).join(', ')}]`;
+  }
+
+  toRankOnlyShortString() {
+    return `[${this.cards.map(card => card.toRankOnlyShortString()).join(', ')}]`;
   }
 
 }

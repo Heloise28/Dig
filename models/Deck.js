@@ -68,7 +68,7 @@ export class Deck {
     const selectedCards = this.cards.filter(card => card.isSelected);
     
     if (selectedCards.length === 0) {
-      console.log('No selected cards');
+      console.log('No selected cards (Im in Deck Class)');
       return [];
     }
 
@@ -77,6 +77,7 @@ export class Deck {
 
   /**
    * Deal a specific card from the deck
+   * Card to deal must have same reference -> the one specific card
    * @param {Card} card - Specific card to deal
    * @returns {Card|null} The dealt card or null if not found
    */
@@ -85,7 +86,7 @@ export class Deck {
       throw new Error('Invalid card');
     }
     
-    const index = this.cards.findIndex(c => c.equals(card));
+    const index = this.cards.findIndex(c => c.equalReferenceWith(card));
     if (index === -1) {
       console.warn('Card not found in deck');
       return null;
@@ -351,7 +352,8 @@ export class Deck {
   }
 
   /**
-   * Find a card in the deck
+   * Find a card in the decl
+   * Find means same reference -> the one specific card
    * @param {Card} card - Card to find
    * @returns {number} Index of card or -1 if not found
    */
@@ -359,11 +361,13 @@ export class Deck {
     if (!(card instanceof Card)) {
       return -1;
     }
-    return this.cards.findIndex(c => c.equals(card));
+    return this.cards.findIndex(c => c.equalReferenceWith(card));
   }
 
   /**
-   * Find a unselected card in the deck
+   * Find a certain unselected card in the deck
+   * Unlike findIndexOfCard(), this is find by rank and suit, not reference.
+   * So it finds you an unselected card of the rank and suit you want.
    * @param {Card} card - Card to find
    * @returns {number} Index of card or -1 if not found
    */
@@ -371,7 +375,7 @@ export class Deck {
     if (!(card instanceof Card)) {
       return -1;
     }
-    return this.cards.findIndex(c => c.equals(card) && !c.isSelected);
+    return this.cards.findIndex(c => c.equalRandAndSuitWith(card) && !c.isSelected);
   }
 
   //for testing in console

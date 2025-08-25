@@ -1,20 +1,23 @@
-import { Player } from './Player';
+import { DigPlayer } from './DigPlayer.js';
+import { CombType } from './enums.js';
 
-export class EasyAIPlayer extends Player {
+
+/**
+ * @TODO
+ * put evaluate all playable combs in super? or static here. Human need it for hints
+ * but do human need availableCombinations?
+ * 
+ * The score for each comb -> Can be the % that it's a turn winning comb.
+ */
+export class AIDigPlayer extends DigPlayer {
   constructor(name, seatNumber) {
     super(name, false, seatNumber);
+
   }
 
-  playCard(card) {
-    console.log(`${this.name} plays ${card.toString()}`);
-  }
-
-  bid(playerBid) {
-    let amount = this.makeBidDecision();
-    playerBid = playerBid + amount;
-    console.log(`${this.name} bids ${amount} for ${playerBid}`);
-  }
-
+  /**
+   * @TODO 下面这是随便写的
+   */
   makeBidDecision() {
     let bigCardCount = this.hand.countCardsByRank('A') 
     + this.hand.countCardsByRank('2')

@@ -1,7 +1,5 @@
 import { Card } from '../models/Card.js';
-import { Deck } from '../models/Deck.js';
-import { HumanPlayer } from '../models/HumanPlayer.js';
-import { CardCombination } from '../models/CardCombination.js';
+import { HumanDigPlayer } from '../models/HumanDigPlayer.js';
 import { Suit, CombType } from '../models/enums.js';
 import { DigGameEngine } from '../models/DigGameEngine.js';
 
@@ -98,34 +96,7 @@ console.log('Is deck empty?', deck54.isEmpty());
 
 
 
-//the following is the functions to select cards in console
-//in order to test
-import readline from 'readline';
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-function askQuestion(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer);
-    });
-  });
-}
-
-async function askForCardSelection(player) {
-  while (true) {
-    const notation = await askQuestion('Enter card notation (or "quit" to exit): ');
-    
-    if (notation.toLowerCase() === 'q') {
-      break;
-    }
-    
-    player.selectCardByNotation(notation);
-  }
-}
 
 
 
@@ -144,7 +115,7 @@ digDeck.flipDeck();
 digDeck.shuffle();
 console.log('Dig deck created:', digDeck.toString());
 
-const john = new HumanPlayer('John', 1);
+const john = new HumanDigPlayer('John', 1);
 john.addCards(digDeck.dealTopCards(16));
 
 john.addCards([
@@ -156,20 +127,23 @@ john.addCards([
   new Card("6", Suit.CLUBS, true),
 ]);
 
-john.sortHandAsc();
+john.sortHandAscByValue();
 //console.log(playerJohn.getHand().peek().toShortString());
 console.log(john.toString());
 
 let johnPlayed;
 let i = 0;
 
-let typeOfTurn = CombType.PAIR;
-let valueToBeat = 10;
+let typeOfTurn = CombType.PAIR_STRAIGHT;
+let valueToBeat = 2;
+let sraightSizeOfTurn = 3;
 
-while (john.getHandSize() > 0 && i < 3) {
-    await askForCardSelection(john);
-    let selectedComb = john.getSelectedCards();
-    DigGameEngine.evaluateCardCombination(selectedComb, typeOfTurn, valueToBeat);
+john.updateAvailableCombinations();
+john.printAvailableCombinations();
+
+while (john.getHandSize() > 0 && i < 1) {
+    let selectedComb = await john.getSelectedCardsFromConsole();
+    DigGameEngine.evaluateCardCombination(selectedComb, typeOfTurn, valueToBeat, sraightSizeOfTurn)
     if (selectedComb.isValidCombination()) {
         typeOfTurn = selectedComb.getType();
         valueToBeat = selectedComb.getValue();
@@ -184,7 +158,6 @@ while (john.getHandSize() > 0 && i < 3) {
     i++;
 }
 
-rl.close();
 
 
 

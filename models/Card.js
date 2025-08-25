@@ -214,6 +214,21 @@ export class Card {
     return `${this.rank}${this.suit.charAt(0).toUpperCase()}`;
   }
 
+  toRankOnlyShortString() {
+    if (!this.isFaceUp) {
+      return '🂠'; // Card back unicode
+    }
+    
+    // Handle jokers specially
+    if (this.rank === 'Black') {
+      return `j`;
+    } else if (this.rank === 'Red') {
+      return `J`;
+    }
+    
+    return `${this.rank}`;
+  }
+
   /**
    * Compare this card with another card
    * @param {Card} otherCard - Card to compare with
@@ -230,13 +245,22 @@ export class Card {
   }
 
   /**
-   * Check if this card equals another card
+   * Check if this card and another card has same rank and suit
    * @param {Card} otherCard - Card to compare with
    * @returns {boolean} True if cards are equal
    */
-  equals(otherCard) {
+  equalRandAndSuitWith(otherCard) {
     if (!(otherCard instanceof Card)) return false;
     return this.rank === otherCard.rank && this.suit === otherCard.suit;
+  }
+
+  /**
+   * Check if this card and another card are same reference
+   * @param {Card} otherCard - Card to compare with
+   * @returns {boolean} True if cards are equal
+   */  
+  equalReferenceWith(other) {
+    return this === other;
   }
 
   /**

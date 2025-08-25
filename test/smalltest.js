@@ -1,6 +1,6 @@
 import { Card } from '../models/Card.js';
 import { Deck } from '../models/Deck.js';
-import { HumanPlayer } from '../models/HumanPlayer.js';
+import { HumanDigPlayer } from '../models/HumanDigPlayer.js';
 import { CardCombination } from '../models/CardCombination.js';
 import { Suit } from '../models/enums.js';
 import { DigGameEngine } from '../models/DigGameEngine.js';
