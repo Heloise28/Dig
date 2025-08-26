@@ -118,8 +118,8 @@ const john = new HumanDigPlayer('John', 1);
 john.addCards(digDeck.dealTopCards(16));
 
 john.addCards([
-  new Card("4", Suit.CLUBS, true),
-  new Card("4", Suit.CLUBS, true),
+  new Card("7", Suit.CLUBS, true),
+  new Card("7", Suit.CLUBS, true),
   new Card("5", Suit.CLUBS, true),
   new Card("5", Suit.CLUBS, true),
   new Card("6", Suit.CLUBS, true),

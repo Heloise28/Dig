@@ -12,8 +12,8 @@ export class DigPlayer {
     this.seatNumber = seatNumber;
     this.countOfEachValue = new Map();
     
-    // value is 2D array, outer index is comb size
-    // outer index is for straights, but for non straight they are also 1-4 for consistancy
+    // value is 2D array, outer index is comb size, mainly for straights
+    // for non straight they are all 1, because only 1 unique value
     // inner item is number array of the values of that size
     this.availableMaxCombs  = new Map([
        [CombType.SINGLE, []],
@@ -52,10 +52,6 @@ export class DigPlayer {
 
   getSeatNumber() {
     return this.seatNumber;
-  }
-
-  getAvailableCombinations() {
-    return this.availableCombinations;
   }
 
   // Setters with validation
@@ -214,79 +210,86 @@ export class DigPlayer {
     this.countOfEachValue = this.getValueCounts();
 
       // Pass 1: Process non-straight combinations
-      // map.forEach((value, key, map) => { ... }) Value first, then key!!!
-      this.countOfEachValue.forEach((count, value) => {
-
-          // Add maximum combination type for this value
-          if (count >= 4) {
-              this.addCombination(CombType.QUAD, 4, value);
-          } else if (count >= 3) {
-              this.addCombination(CombType.TRIPLE, 3, value);
-          } else if (count >= 2) {
-              this.addCombination(CombType.PAIR, 2, value);
-          } else {
-              this.addCombination(CombType.SINGLE, 1, value);
-          }
-      });
-
+      this.processNonStraights();
       // Pass 2: Process straight combinations
       this.processStraights();
   }
 
   /**
    * Processes all straight combinations by finding consecutive groups
+   * 
+   */
+  processNonStraights() {
+    // map.forEach((value, key, map) => { ... }) Value first, then key!!!
+    this.countOfEachValue.forEach((count, value) => {
+        // Add maximum combination type for this value
+        if (count >= 4) {
+            this.addCombination(CombType.QUAD, 1, value);
+        } else if (count >= 3) {
+            this.addCombination(CombType.TRIPLE, 1, value);
+        } else if (count >= 2) {
+            this.addCombination(CombType.PAIR, 1, value);
+        } else {
+            this.addCombination(CombType.SINGLE, 1, value);
+        }
+    });
+
+  }
+  /**
+   * Processes all straight combinations by finding consecutive groups
    * and determining the minimum multiplicity for each group
    */
   processStraights() {
-      // Get all values that can be in straights (4-13), sorted
-      const straightValues = Array.from(this.countOfEachValue.keys())
-          .filter(value => value >= 4 && value <= 13)
-          .sort((a, b) => a - b);
 
-      // Find consecutive groups
-      const consecutiveGroups = this.findConsecutiveGroups(straightValues);
-
-      // Process each consecutive group
-      consecutiveGroups.forEach(group => {
-          // Find minimum count for this group
-          const minCount = Math.min(...group.map(value => this.countOfEachValue.get(value)));
-          const size = group.length;
-          const maxValue = group[group.length - 1]; // Last value is the max
-
-          // Add appropriate straight combination based on minimum count
-          if (minCount >= 4) {
-              this.addCombination(CombType.QUAD_STRAIGHT, size, maxValue);
-          } else if (minCount >= 3) {
-              this.addCombination(CombType.TRIPLE_STRAIGHT, size, maxValue);
-          } else if (minCount >= 2) {
-              this.addCombination(CombType.PAIR_STRAIGHT, size, maxValue);
-          } else if (minCount >= 1) {
-              this.addCombination(CombType.STRAIGHT, size, maxValue);
+      let singles = [], pairs = [], triples = [], quads = [];
+      this.countOfEachValue.forEach((count, value) => {
+          if (value >= 4 && value <= 13) {
+              singles.push(value);
+              if (count > 1) pairs.push(value);
+              if (count > 2) triples.push(value);
+              if (count > 3) quads.push(value);
           }
       });
+      // Find consecutive groups
+      singles = this.findConsecutiveGroups(singles);
+      pairs = this.findConsecutiveGroups(pairs);
+      triples = this.findConsecutiveGroups(triples);
+      quads = this.findConsecutiveGroups(quads);
+
+      this.addStraightCombination(singles, CombType.STRAIGHT);
+      this.addStraightCombination(pairs, CombType.PAIR_STRAIGHT);
+      this.addStraightCombination(triples, CombType.TRIPLE_STRAIGHT);
+      this.addStraightCombination(quads, CombType.QUAD_STRAIGHT);
+      
+
   }
 
   /**
    * Finds all consecutive groups from sorted values that are at least 3 cards long
-   * @param {Array} sortedValues - Sorted array of values
+   * @param {Array} values - array of values
    * @returns {Array} 2D array where each sub-array is a consecutive group of ≥3 cards
    */
-  findConsecutiveGroups(sortedValues) {
-      if (sortedValues.length === 0) return [];
-      
-      const groups = [];
-      let currentGroup = [sortedValues[0]];
+  findConsecutiveGroups(values) {
 
-      for (let i = 1; i < sortedValues.length; i++) {
-          if (sortedValues[i] === sortedValues[i-1] + 1) {
+      //need at least 3 to form a straight
+      if (values.length < 3) return [];
+
+      //sort asc
+      values.sort((a, b) => a - b);
+
+      const groups = [];
+      let currentGroup = [values[0]];
+
+      for (let i = 1; i < values.length; i++) {
+          if (values[i] === values[i-1] + 1) {
               // Consecutive, add to current group
-              currentGroup.push(sortedValues[i]);
+              currentGroup.push(values[i]);
           } else {
               // Not consecutive, save current group if valid and start new one
               if (currentGroup.length >= 3) {
                   groups.push(currentGroup);
               }
-              currentGroup = [sortedValues[i]];
+              currentGroup = [values[i]];
           }
       }
       
@@ -296,6 +299,21 @@ export class DigPlayer {
       }
       
       return groups;
+  }
+
+  /**
+   * Helper to add a combination of straight type to availableMaxCombs
+   * @param {Array} values - 2D array number array of values
+   * @param {CombType} combType - Type of combination
+   */
+  addStraightCombination(values, combType) {
+    // Process each consecutive group
+    values.forEach(group => {
+        // Find minimum count for this group
+        const size = group.length;
+        const maxValue = group[group.length - 1]; // Last value is the max
+        this.addCombination(combType, size, maxValue);
+    });
   }
 
   /**
@@ -454,6 +472,7 @@ export class DigPlayer {
 
 
   /**
+   * If you want to switch back to allAvailableCombs
    * Just copy and change availableMaxCombs to allAvailableCombs, and add allAvailableCombs back in constructor, it should print
    * Because availableMaxCombs and allAvailableCombs are same data structure. allAvailableCombs
    */
@@ -462,9 +481,9 @@ export class DigPlayer {
     
     const typesToDisplay = [
         { type: CombType.SINGLE, name: "Single", fixedSize: 1 },
-        { type: CombType.PAIR, name: "Pair", fixedSize: 2 },
-        { type: CombType.TRIPLE, name: "Triple", fixedSize: 3 },
-        { type: CombType.QUAD, name: "Quad", fixedSize: 4 },
+        { type: CombType.PAIR, name: "Pair", fixedSize: 1 },
+        { type: CombType.TRIPLE, name: "Triple", fixedSize: 1 },
+        { type: CombType.QUAD, name: "Quad", fixedSize: 1 },
         { type: CombType.STRAIGHT, name: "Straight", fixedSize: null },
         { type: CombType.PAIR_STRAIGHT, name: "Pair Straight", fixedSize: null },
         { type: CombType.TRIPLE_STRAIGHT, name: "Triple Straight", fixedSize: null },
@@ -540,24 +559,21 @@ export class DigPlayer {
               
           case CombType.PAIR_STRAIGHT:
               const pairStraightCards = [];
-              const pairLength = size / 2;
-              for (let i = highestValue - pairLength + 1; i <= highestValue; i++) {
+              for (let i = highestValue - size + 1; i <= highestValue; i++) {
                   pairStraightCards.push(valueToDisplay(i), valueToDisplay(i));
               }
               return pairStraightCards;
               
           case CombType.TRIPLE_STRAIGHT:
               const tripleStraightCards = [];
-              const tripleLength = size / 3;
-              for (let i = highestValue - tripleLength + 1; i <= highestValue; i++) {
+              for (let i = highestValue - size + 1; i <= highestValue; i++) {
                   tripleStraightCards.push(valueToDisplay(i), valueToDisplay(i), valueToDisplay(i));
               }
               return tripleStraightCards;
               
           case CombType.QUAD_STRAIGHT:
               const quadStraightCards = [];
-              const quadLength = size / 4;
-              for (let i = highestValue - quadLength + 1; i <= highestValue; i++) {
+              for (let i = highestValue - size + 1; i <= highestValue; i++) {
                   quadStraightCards.push(valueToDisplay(i), valueToDisplay(i), valueToDisplay(i), valueToDisplay(i));
               }
               return quadStraightCards;
