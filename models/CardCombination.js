@@ -7,7 +7,7 @@ export class CardCombination {
 
   /**
    * @param {Array} cards - Array of Card objects
-   * SORT by value ASC by default!!
+   * SORT by value ASC upon creation
    */
   constructor(cards) {
     cards.sort((a, b) => a.value - b.value);

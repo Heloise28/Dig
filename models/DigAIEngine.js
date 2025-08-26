@@ -10,18 +10,6 @@ import { RoundState } from "./DigRoundState";
 
 export class DigGameEngine {
 
-  //in case needed
-  static allTypes = [
-    CombType.SINGLE,
-    CombType.PAIR,
-    CombType.TRIPLE,
-    CombType.QUAD,
-    CombType.STRAIGHT,
-    CombType.PAIR_STRAIGHT,
-    CombType.TRIPLE_STRAIGHT,
-    CombType.QUAD_STRAIGHT,
-    CombType.NONE,
-  ];
 
 
 /**
@@ -37,15 +25,20 @@ export class DigGameEngine {
 
     
     /**
-     * @TODO handle first round, 4 of heart 
+     * @TODO handle game opening,  must at least play 4 of heart, if not, 5H, etc
+     * player is guranteed to have 4 of heart, or 5 etc, if it's opening player
+     * 
      * then open round
-     * then normal round
+     * 
+     * then follow round
     */
 
 
     /**
      * @TODO Easy will pick lowest comb that can beat value, from available max combs
-     * will break straight if the remining can still from straight
+     * will break straight if the remining can still from straight and don't break same straight of more repeats
+     * which means
+     * 
      * otherwise will pass and return CardCombination([]);
      */
 
@@ -70,6 +63,70 @@ export class DigGameEngine {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /**
+   * @TODO 下面这是随便写的
+   */
+  makeBidDecision() {
+    let bigCardCount = this.hand.countCardsByRank('A') 
+    + this.hand.countCardsByRank('2')
+    + this.hand.countCardsByRank('3');
+
+    if (bigCardCount > 5) {
+        return 3;
+    } else if (bigCardCount > 4) {
+        return 2;
+    } else if (bigCardCount > 3) {
+        return 1;
+    } else {
+        return 0;
+    }
+  }
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -293,34 +350,6 @@ isStraightType(type) {
 
 
   
-
-
-
-
-
-
-
-  /**
-   * @TODO 下面这是随便写的
-   */
-  makeBidDecision() {
-    let bigCardCount = this.hand.countCardsByRank('A') 
-    + this.hand.countCardsByRank('2')
-    + this.hand.countCardsByRank('3');
-
-    if (bigCardCount > 5) {
-        return 3;
-    } else if (bigCardCount > 4) {
-        return 2;
-    } else if (bigCardCount > 3) {
-        return 1;
-    } else {
-        return 0;
-    }
-  }
-
-    
-    
 
 
 
