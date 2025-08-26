@@ -68,7 +68,7 @@ export class Deck {
     const selectedCards = this.cards.filter(card => card.isSelected);
     
     if (selectedCards.length === 0) {
-      console.log('No selected cards (Im in Deck Class)');
+      console.log('No selected cards (Message from Deck Class)');
       return [];
     }
 
@@ -348,7 +348,7 @@ export class Deck {
    * @returns {Card[]} Array of all cards
    */
   getCards() {
-    return [...this.cards]; // Return a copy to prevent external modification
+    return this.cards;
   }
 
   /**
@@ -381,84 +381,81 @@ export class Deck {
   //for testing in console
   selectCardByNotation(notation) {
   // Handle empty or invalid input
-  if (!notation || typeof notation !== 'string') {
-    console.log('find card:  Invalid input');
-    return;
-  }
-  
-  const input = notation.trim().toLowerCase();
-  
-  if (input === '') {
-    console.log('find card:  Invalid input');
-    return;
-  }
-  
-  let targetRank, targetSuit;
-  
-  // Handle jokers
-  if (input === 'j') {
-    targetRank = 'Black';
-    targetSuit = Suit.JOKER;
-  } else if (input === 'J') {
-    targetRank = 'Red';
-    targetSuit = Suit.JOKER;
-  } else if (input.length >= 2) {
-    // Parse rank and suit for regular cards
-    const rank = input.slice(0, -1);
-    const suitChar = input.slice(-1);
-    
-    // Map rank notation to actual rank
-    const rankMap = {
-      'a': 'A',
-      '2': '2', 
-      '3': '3', 
-      '4': '4', 
-      '5': '5',
-      '6': '6', 
-      '7': '7', 
-      '8': '8', 
-      '9': '9',
-      '10': '10',
-      'j': 'J',
-      'q': 'Q',
-      'k': 'K'
-    };
-    
-    // Map suit notation to actual suit
-    const suitMap = {
-      'h': Suit.HEARTS,
-      'd': Suit.DIAMONDS,
-      'c': Suit.CLUBS,
-      's': Suit.SPADES
-    };
-    
-    targetRank = rankMap[rank];
-    targetSuit = suitMap[suitChar];
-    
-    if (!targetRank || !targetSuit) {
+    if (!notation || typeof notation !== 'string') {
       console.log('find card:  Invalid input');
       return;
     }
-  } else {
-    console.log('find card: Invalid input');
-    return;
+    
+    const input = notation.trim().toLowerCase();
+    
+    if (input === '') {
+      console.log('find card:  Invalid input');
+      return;
+    }
+    
+    let targetRank, targetSuit;
+    
+    // Handle jokers
+    if (input === 'j') {
+      targetRank = 'Black';
+      targetSuit = Suit.JOKER;
+    } else if (input === 'J') {
+      targetRank = 'Red';
+      targetSuit = Suit.JOKER;
+    } else if (input.length >= 2) {
+      // Parse rank and suit for regular cards
+      const rank = input.slice(0, -1);
+      const suitChar = input.slice(-1);
+      
+      // Map rank notation to actual rank
+      const rankMap = {
+        'a': 'A',
+        '2': '2', 
+        '3': '3', 
+        '4': '4', 
+        '5': '5',
+        '6': '6', 
+        '7': '7', 
+        '8': '8', 
+        '9': '9',
+        '10': '10',
+        'j': 'J',
+        'q': 'Q',
+        'k': 'K'
+      };
+      
+      // Map suit notation to actual suit
+      const suitMap = {
+        'h': Suit.HEARTS,
+        'd': Suit.DIAMONDS,
+        'c': Suit.CLUBS,
+        's': Suit.SPADES
+      };
+      
+      targetRank = rankMap[rank];
+      targetSuit = suitMap[suitChar];
+      
+      if (!targetRank || !targetSuit) {
+        console.log('find card:  Invalid input');
+        return;
+      }
+
+    } else {
+      console.log('find card: Invalid input');
+      return;
+    }
+      
+    // Find the card in the deck
+    const targetCard = new Card(targetRank, targetSuit, true);
+    const cardIndex = this.findIndexOfCardUnselected(targetCard);
+    
+    if (cardIndex !== -1) {
+      this.cards[cardIndex].selectCard();
+      console.log(`Selected: ${this.cards[cardIndex].toShortString()}`);
+    } else {
+      console.log('find card: card not found or already selected');
+    }
   }
-  
-  // Find the card in the deck
-  const targetCard = new Card(targetRank, targetSuit, true);
-  const cardIndex = this.findIndexOfCardUnselected(targetCard);
-  
-  if (cardIndex !== -1) {
-    this.cards[cardIndex].selectCard();
-    console.log(`Selected: ${this.cards[cardIndex].toShortString()}`);
-  } else {
-    console.log('find card: card not found or already selected');
-  }
-}
-
-
-
-
 
 
   /**

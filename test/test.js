@@ -2,8 +2,7 @@ import { Card } from '../models/Card.js';
 import { HumanDigPlayer } from '../models/HumanDigPlayer.js';
 import { Suit, CombType } from '../models/enums.js';
 import { DigGameEngine } from '../models/DigGameEngine.js';
-
-
+import { DigRoundState } from '../models/DigRoundState.js';
 
 
 /*
@@ -131,31 +130,60 @@ john.sortHandAscByValue();
 //console.log(playerJohn.getHand().peek().toShortString());
 console.log(john.toString());
 
+/**
+ * @TODO replace with 2D array of all cards played in this game.
+ * i is # of turn; j is played comb, j index is player seat #
+ */
 let johnPlayed;
-let i = 0;
 
-let typeOfTurn = CombType.PAIR_STRAIGHT;
-let valueToBeat = 2;
-let sraightSizeOfTurn = 3;
+const state = new DigRoundState();
+state.setType(CombType.PAIR_STRAIGHT);
+state.setValue(2);
+state.setStraightSize(3);
 
-john.updateAvailableCombinations();
-john.printAvailableCombinations();
+john.updateAvailableMaxCombs();
+john.printAvailableMaxCombs();
 
-while (john.getHandSize() > 0 && i < 1) {
-    let selectedComb = await john.getSelectedCardsFromConsole();
-    DigGameEngine.evaluateCardCombination(selectedComb, typeOfTurn, valueToBeat, sraightSizeOfTurn)
+
+/**
+ * @TODO put each player's turn in a function
+ * param is player and cards properties required
+ * same while loop
+ * If human, call await player.selectedCardsFromConsole();
+ * if AI, just let selectedComb = player.getAISelectedComb();
+ * selectedCardsFromConsole() also verify(), because only good comb can be selected by AI
+ * Then, if AI, skip evaluateCardCombination(), just player.lose.seSelectedCards();
+ * and update cards properties required for the turn
+ */
+//A single turn of a player, q to quit turn
+while (john.getHandSize() > 0) {
+  let selectedComb = await john.getCombOfSelectedCards();
+
+  //If no card selected, treat as a pass
+  if (selectedComb.getSize() === 0) {
+    console.log('No cards selected, player chose to pass.')
+    break;
+  
+  //else, compute
+  } else {
+    DigGameEngine.evaluateCardCombination(selectedComb, state)
     if (selectedComb.isValidCombination()) {
-        typeOfTurn = selectedComb.getType();
-        valueToBeat = selectedComb.getValue();
-        johnPlayed = selectedComb;
-        john.loseSelectedCards();
-        console.log('John plays: ' + johnPlayed);
-        console.log(john.toString());
+      state.setType(selectedComb.getType());
+      state.setValue(selectedComb.getValue());
+      state.setStraightSize(selectedComb.getStraightSize());
+      //update what john player played in this turn
+      johnPlayed = selectedComb;
+      john.loseSelectedCards();
+      console.log('John plays: ' + johnPlayed);
+      console.log(john.toString());
     } else {
-        console.log('can\'t play this!');
-        john.getHand().deselectDeck();
+      console.log('can\'t play this!');
+    
     }
-    i++;
+    selectedComb.deselectComb();    
+  
+  }
+
 }
 
 

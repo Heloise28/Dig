@@ -1,37 +1,42 @@
+import { CardCombination } from './CardCombination.js';
 import { DigPlayer } from './DigPlayer.js';
-import { CombType } from './enums.js';
+import { Personality } from './enums.js';
+import { RoundState } from './DigRoundState.js';
 
 
-/**
- * @TODO
- * put evaluate all playable combs in super? or static here. Human need it for hints
- * but do human need availableCombinations?
- * 
- * The score for each comb -> Can be the % that it's a turn winning comb.
- */
 export class AIDigPlayer extends DigPlayer {
-  constructor(name, seatNumber) {
+  constructor(name, seatNumber, level, personality) {
     super(name, false, seatNumber);
+
+    //level is a number, personality is personality enum
+    //why not validate first?
+    if (!personality || !Personality.isValid(personality)) {
+      throw new Error(`${suit} is not a personality!`);
+    }
+    if (typeof newValue !== 'number') {
+      throw new Error('Ce niveau d\'IA n\'existe pas!');
+    }
+    this.level = level;
+    this.personality = personality;
 
   }
 
   /**
-   * @TODO 下面这是随便写的
+   * Call decision makers from DigAIEngine
+   * @TODO will ask for 2D array of all cards played in this game as param
+   * for better decision making.
+   * @param { RoundState } state
+   * @return { CardCombination }
+   * 
    */
-  makeBidDecision() {
-    let bigCardCount = this.hand.countCardsByRank('A') 
-    + this.hand.countCardsByRank('2')
-    + this.hand.countCardsByRank('3');
-
-    if (bigCardCount > 5) {
-        return 3;
-    } else if (bigCardCount > 4) {
-        return 2;
-    } else if (bigCardCount > 3) {
-        return 1;
-    } else {
-        return 0;
+  getAISelectedComb(state) {
+    
+    if (this.level === 1) {
+      return DigAIEngine.easyAIcombDecision(this, state);
     }
+
+    console.log('This is a broken AI player. It can only pass.')
+    return CardCombination([]);
   }
 
 

@@ -164,6 +164,13 @@ export class CardCombination {
     return this.cards.every(card => card.getSuit() === firstSuit);
   }
 
+  //deselcted cards in the comb
+  deselectComb() {
+    for (const card of this.cards) {
+      card.deselectCard();
+    } 
+  }
+
 
   toString() {
     return `Combination: Type: ${this.type}, Value: ${this.value}, Cards: [${this.cards.map(card => card.toShortString()).join(', ')}]`;

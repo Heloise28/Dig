@@ -1,6 +1,4 @@
 /* 
-set new value to A,2,3 here first
-
 
 when click play cards, 
 set selected comb value and type here
@@ -9,21 +7,12 @@ update this turn's value and type
 
 
 
-
-  verifySelectedCards(player) {
-    selctedCards = CardCombination(player.hand.filter(card => card.isSelected === true));
-    
-  }
-
 */
-
 
 import { Deck } from './Deck.js';
 import { CombType } from './enums.js';
 import { CardCombination } from './CardCombination.js';
-
-
-
+import { DigRoundState } from '../models/DigRoundState.js';
 
 export class DigGameEngine {
 
@@ -65,23 +54,27 @@ export class DigGameEngine {
   /**
    * Static function to evaluate a card combination and set its properties
    * @param {CardCombination} comb - The card combination to evaluate
-   * @param {CombType} typeOfTurn
-   * @param {Number} valueToBeat
-   * @param {Number} sraightSizeOfTurn
+   * @param {DigRoundState} state
    * because comb is passed by reference, its properties are set,
    * for next stage, reject the cards or let player play them.
    */
-  static evaluateCardCombination(comb, typeOfTurn, valueToBeat, sraightSizeOfTurn) {
+  static evaluateCardCombination(comb, state) {
+
+    const typeOfTurn = state.getType();
+    const valueToBeat = state.getValue();
+    const straightSizeOfTurn = state.getStraightSize();
+
     const size = comb.getSize();
     const cardValues = comb.getCards().map((c) => c.getValue());
 
     if (size === 0) {
-      console.log('No card selected! (Im in DigGameEngine Class)');
+      console.log('No card selected! (from DigGameEngine)');
       return;
     }
 
     comb.setType(this.determineType(size, cardValues));
     comb.setStraightSize(this.determineStraightSize(size, comb.getType()));
+
 
     //if matches a comb type
     if (comb.getType() !== CombType.NONE) {
@@ -89,15 +82,17 @@ export class DigGameEngine {
       comb.setValueToLargestValue();
       console.log('Selected cards match a combination type! ' + comb);
 
-      if (this.isCombOkToPlay(comb, typeOfTurn, valueToBeat, sraightSizeOfTurn)) {
+      if (this.isCombOkToPlay(comb, typeOfTurn, valueToBeat, straightSizeOfTurn)) {
         comb.verify(true);
-        console.log('It\'s OK to play these cards!');
         return;
 
       }
+    
+    } else {
+
+      console.log('Selected cards does NOT match a combination type! ' + comb);
     }
 
-    console.log('It\'s NOT GOOD cards.');
     return;
   }
 
@@ -106,31 +101,35 @@ export class DigGameEngine {
    * @param {CardCombination} comb - The card combination to evaluate
    * @param {CombType} typeOfTurn
    * @param {Number} valueToBeat
-   * @param {Number} sraightSizeOfTurn
+   * @param {Number} straightSizeOfTurn
    * @return {boolean} is the comb ok to play? 
    */
-  static isCombOkToPlay(comb, typeOfTurn, valueToBeat, sraightSizeOfTurn) {
+  static isCombOkToPlay(comb, typeOfTurn, valueToBeat, straightSizeOfTurn) {
     //if there's NO type to follow or a value to beat, OK to play.
-    if (typeOfTurn === CombType.NONE || valueToBeat === 0) {
+    if (typeOfTurn === CombType.NONE && valueToBeat === 0) {
+      console.log('It\'s OK to play these cards!');
       return true;
     }
 
     //if doesn't meet required type of this turn, and doesn't beats last player's value
     //Not Ok to play
     if (comb.getType() !== typeOfTurn || comb.getValue() <= valueToBeat) {
+      console.log('Wrong type or too small value!');
       return false;
     }
 
     //if it's a straight
-    if (sraightSizeOfTurn !== 0) {
+    if (straightSizeOfTurn !== 0) {
 
       //if straight size don't match, NOT OK to play
-      if (sraightSizeOfTurn !== comb.getStraightSize()) {
+      if (straightSizeOfTurn !== comb.getStraightSize()) {
+        console.log('It\'s straight but size don\'t match!');
         return false;
       }
     
     }
 
+    console.log('It\'s OK to play these cards!');
     return true;
   }
 
@@ -176,6 +175,7 @@ export class DigGameEngine {
 
   /**
    * Helper for determineType()
+   * @TODO can it be more optimized?
    * @param int size, int array cardValues
    * @return a CombType
    */
@@ -187,25 +187,31 @@ export class DigGameEngine {
     for (let i = 1; i < size; i ++) {        
       difference = cardValues[i] - cardValues[i-1];
 
-      if (difference > 1) {
-        return CombType.NONE;
-      }
+      if (difference > 1) return CombType.NONE;
+
 
       if (difference === 0) {
-        
+        repeatCount ++;
+
         if (cardValues[i] === cardValues[0]) {
           firstRepeatCount ++;
         }
+      }
 
-        repeatCount ++;
-
-      } else if (difference === 1 || i === size - 1) {
+      if (difference === 1) {
 
         if (repeatCount !== firstRepeatCount) {
           return CombType.NONE;
         }
+
         repeatCount = 1;
-      } 
+      }
+
+      if (i === size - 1) {
+        if (repeatCount !== firstRepeatCount) {
+          return CombType.NONE;
+        }
+      }
     }
 
     if (firstRepeatCount === 1) {
@@ -248,7 +254,7 @@ export class DigGameEngine {
   }
 
 
-  
+
   
   /**
   *helper for evaluateCardCombination()

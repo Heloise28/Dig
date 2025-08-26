@@ -2,11 +2,11 @@ const CombType = Object.freeze({
   SINGLE: 'Single',
   PAIR: 'Pair',
   TRIPLE: 'Triple',
-  STRAIGHT: 'Straight',
   QUAD: 'Quad',
-  PAIR_STRAIGHT: 'PairStraight',
-  TRIPLE_STRAIGHT: 'TripleStraight',
-  QUAD_STRAIGHT: 'QuadStraight',
+  STRAIGHT: 'Straight',
+  PAIR_STRAIGHT: 'Pair Straight',
+  TRIPLE_STRAIGHT: 'Triple Straight',
+  QUAD_STRAIGHT: 'Quad Straight',
   NONE: 'None',
 
   isValid(value) {
@@ -30,6 +30,14 @@ const Suit = Object.freeze({
 
 });
 
+const Personality = Object.freeze({
+  NOOB_BOT: "Noob Bot",
+
+  isValid(value) {
+    return Object.values(this).includes(value);
+  },
+
+});
 
 
 

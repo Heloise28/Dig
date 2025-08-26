@@ -1,4 +1,5 @@
 import { DigPlayer } from './DigPlayer.js';
+import { CardCombination } from './CardCombination.js';
 import readline from 'readline';
 
 
@@ -13,8 +14,22 @@ export class HumanDigPlayer extends DigPlayer {
   //playerBid is a global to each player in Game Class
   bid(playerBid) {
   }
+  
 
-  async getSelectedCardsFromConsole() {
+  /**
+   * @overide
+   * @return a CardCombination of selected cards
+   * to be examined by game engine.
+   */
+  async getCombOfSelectedCards() {
+    await this.selectCardsFromConsole();
+    let selectedCards = this.hand.getSelectedCards();
+    return new CardCombination(selectedCards);
+  }
+
+
+
+  async selectCardsFromConsole() {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
@@ -31,8 +46,6 @@ export class HumanDigPlayer extends DigPlayer {
     }
 
     rl.close();
-    return this.getSelectedCardComb()
-
   }
 
   //the following is the functions to select cards in console
