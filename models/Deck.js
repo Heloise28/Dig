@@ -352,7 +352,31 @@ export class Deck {
   }
 
   /**
-   * Find a card in the decl
+   * Build a array of cards of each value from this deck 
+   * @param {Array<Number>} values
+   * @return {Array<Card>} Found cards of this value
+   */
+  getCardsByValue(values) {
+    const foundCards = [];
+    const tempValues = values.slice();
+    this.cards.forEach((card) => {
+      
+      if (tempValues.includes(card.getValue())) {
+        foundCards.push(card);
+        const i = tempValues.indexOf(card.getValue());
+
+        if (i > -1) { // only splice array when item is found
+          tempValues.splice(i, 1); // 2nd parameter means remove one item only
+        }
+      }
+
+    });
+
+    return foundCards;
+  }
+
+  /**
+   * Find a card in the deck
    * Find means same reference -> the one specific card
    * @param {Card} card - Card to find
    * @returns {number} Index of card or -1 if not found

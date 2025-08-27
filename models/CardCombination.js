@@ -164,6 +164,13 @@ export class CardCombination {
     return this.cards.every(card => card.getSuit() === firstSuit);
   }
 
+  //selcted cards in the comb
+  selectComb() {
+    for (const card of this.cards) {
+      card.selectCard();
+    } 
+  }
+
   //deselcted cards in the comb
   deselectComb() {
     for (const card of this.cards) {

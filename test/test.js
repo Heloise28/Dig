@@ -168,7 +168,6 @@ while (john.getHandSize() > 0) {
   //If no card selected, treat as a pass
   if (selectedComb.getSize() === 0) {
     console.log('No cards selected, player chose to pass.')
-    break;
   
   //else, compute
   } else {

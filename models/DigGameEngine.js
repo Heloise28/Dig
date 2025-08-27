@@ -10,6 +10,7 @@ update this turn's value and type
 */
 
 import { Deck } from './Deck.js';
+import { Card } from './Card.js';
 import { CombType } from './enums.js';
 import { CardCombination } from './CardCombination.js';
 import { DigRoundState } from '../models/DigRoundState.js';
@@ -25,19 +26,27 @@ export class DigGameEngine {
    * Value: 3 > 2 > A > K > Q .... > 4
   */
   static createDeckForDig() {
-    let deck = Deck.create52CardDeck();
-    for (let i=0; i<52; i ++) {
-      if (deck.cards[i].rank === 'A') {
-        deck.cards[i].setCardValue(14);
+    const deck = Deck.create52CardDeck();
+    this.raiseBigCardsValue(deck);
+    return deck;
+  }
+
+  /**
+   * Raise A, 2, 3 value to 14, 15, 16
+   * Helps to build a deck for Dig
+   */
+  static raiseBigCardsValue(deck) {
+    for (let i=0; i<deck.getCards().length; i++) {
+      if (deck.getCards()[i].getRank() === 'A') {
+        deck.getCards()[i].setValue(14);
       }
-      if (deck.cards[i].rank === '2') {
-        deck.cards[i].setCardValue(15);
+      if (deck.getCards()[i].getRank() === '2') {
+        deck.getCards()[i].setValue(15);
       }
-      if (deck.cards[i].rank === '3') {
-        deck.cards[i].setCardValue(16);
+      if (deck.getCards()[i].getRank() === '3') {
+        deck.getCards()[i].setValue(16);
       }
     }
-    return deck;
   }
 
   //call these two after evaluating a comb

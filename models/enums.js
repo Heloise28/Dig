@@ -42,7 +42,7 @@ const Personality = Object.freeze({
 
 
 
-export { CombType, Suit };
+export { CombType, Suit, Personality };
 
 
 

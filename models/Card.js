@@ -115,7 +115,7 @@ export class Card {
    * @param {string} newRank - New rank for the card
   * @throws Will throw an error if the new rank is invalid 
   */
-  setCardValue(newValue) {
+  setValue(newValue) {
     if (typeof newValue !== 'number' || newValue < -1000 || newValue > 1000) {
       throw new Error('Card value must be a number between -1000 and 1000');
     }

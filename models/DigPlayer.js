@@ -2,7 +2,21 @@ import { CardCombination } from './CardCombination.js';
 import { Deck } from './Deck.js';
 import { CombType, Suit } from './enums.js';
 
-
+/**
+ * Key difference of game flow between human and AI sub class
+ * Human select cards first, then program make a CardCombination
+ * of selected cards, send it to evaluation and verification
+ * then let huamn play them or reject
+ * 
+ * But AI first turn it's own cards and 
+ * (to be implemented in the future) history of played cards 
+ * in to data strutures of card value numbers.
+ * Then compute, get a number array of the values to play;
+ * Then pick out a CardCombination of these values from AI's hand;
+ * Then mark them selected, and send them to game engine
+ * (Can skip evaluation and verification)
+ * 
+ */
 export class DigPlayer {
   constructor(name, isHuman, seatNumber) {
     this.name = name;
@@ -11,20 +25,6 @@ export class DigPlayer {
     this.isHuman = isHuman;
     this.seatNumber = seatNumber;
     this.countOfEachValue = new Map();
-    
-    // value is 2D array, outer index is comb size, mainly for straights
-    // for non straight they are all 1, because only 1 unique value
-    // inner item is number array of the values of that size
-    this.availableMaxCombs  = new Map([
-       [CombType.SINGLE, []],
-       [CombType.PAIR, []],
-       [CombType.TRIPLE, []],
-       [CombType.QUAD, []],
-       [CombType.STRAIGHT, []],
-       [CombType.PAIR_STRAIGHT, []],
-       [CombType.TRIPLE_STRAIGHT, []],
-       [CombType.QUAD_STRAIGHT, []]
-   ]);
 
    //array of values of each type
    this.singles = [];
@@ -161,8 +161,6 @@ export class DigPlayer {
   bid(playerBid) {
 
   }
-
-
   
   /**
    * Counts occurrences of each card value in the given cards
@@ -176,8 +174,7 @@ export class DigPlayer {
       counts.set(value, (counts.get(value) || 0) + 1);
     }
     return counts;
-  }
-    
+  } 
 
   // -----------               ENDS                ----------
 
@@ -199,20 +196,11 @@ export class DigPlayer {
 
 
 
-
-
-
-
-
-
-
-
-
   // -----------   Update Available **Max** Combinations   ----------
   // -----------             BEGINS                ----------
 
   /**
-   * Updates availableMaxCombs with all maximum possible combinations from current hand.
+   * Updates arrays of the 8 types with all maximum possible combinations from current hand.
    * Simple two-pass approach: non-straights first, then straights by consecutive groups.
    */
   updateAvailableMaxCombs() {
@@ -336,7 +324,7 @@ export class DigPlayer {
       ];
 
 
-    console.log(`=== ${this.name}'s Available Combinations ===`);
+    console.log(`\n=== ${this.name}'s Available Combinations ===`);
 
     for (let typeInfo of TypesAndArrays) {
         const combinations = [];
@@ -351,6 +339,8 @@ export class DigPlayer {
             console.log(`${typeInfo.type}: (none)`);
         }
     }
+
+    console.log(`=======================================\n`);
   }
 
 
