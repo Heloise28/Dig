@@ -1,4 +1,5 @@
 import { CombType, Suit } from './enums.js';
+import { Card } from './Card.js';
 
 
 export class CardCombination {
@@ -167,6 +168,7 @@ export class CardCombination {
   //selcted cards in the comb
   selectComb() {
     for (const card of this.cards) {
+      console.log('Selecting: ' + card);
       card.selectCard();
     } 
   }

@@ -5,6 +5,7 @@ import { DigRoundState } from './DigRoundState.js';
 import { DigEasyAIEngine } from './DigEasyAIEngine.js';
 
 
+
 export class AIDigPlayer extends DigPlayer {
   constructor(name, seatNumber, level, personality) {
     super(name, false, seatNumber);

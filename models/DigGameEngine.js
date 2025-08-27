@@ -5,9 +5,15 @@ set selected comb value and type here
 check selected comb valid here
 update this turn's value and type
 
-
-
 */
+
+/**
+ * @todo also handle errors: must play card to open a round.
+ * If human plays empty comb, ask to select cards
+ * If AI plays empty comb, game crash.
+ */
+
+
 
 import { Deck } from './Deck.js';
 import { Card } from './Card.js';
@@ -115,8 +121,9 @@ export class DigGameEngine {
    */
   static isCombOkToPlay(comb, typeOfTurn, valueToBeat, straightSizeOfTurn) {
     //if there's NO type to follow or a value to beat, OK to play.
-    if (typeOfTurn === CombType.NONE && valueToBeat === 0) {
-      console.log('It\'s OK to play these cards!');
+    console.log('Is this comb Ok to play? require: ' + typeOfTurn);
+    if (typeOfTurn === CombType.NONE) {
+      console.log('Open round! It\'s OK to play these cards!');
       return true;
     }
 

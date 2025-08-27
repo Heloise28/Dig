@@ -23,7 +23,7 @@ const noob = new AIDigPlayer('Noob', 1, 1, Personality.NOOB_BOT);
 
 noob.addCards([
   new Card("4", Suit.CLUBS, true),
-  new Card("4", Suit.DIAMONDS, true),
+  new Card("4", Suit.HEARTS, true),
   new Card("4", Suit.HEARTS, true),
   new Card("5", Suit.CLUBS, true),
   new Card("6", Suit.CLUBS, true),
@@ -51,7 +51,8 @@ const state = new DigRoundState();
 state.setType(CombType.NONE);
 state.setValue(3);
 state.setStraightSize(0);
-state.setIsFirstRound(true)
+state.setIsFirstRound(true);
+state.setIsOpenRound(true);
 
 noob.updateAvailableMaxCombs();
 noob.printAvailableMaxCombs();
@@ -70,6 +71,7 @@ while (noob.getHandSize() > 0 && i < 1) {
       state.setType(selectedComb.getType());
       state.setValue(selectedComb.getValue());
       state.setStraightSize(selectedComb.getStraightSize());
+      state.setIsOpenRound(false);
       //update what noob player played in this turn
       noobPlayed = selectedComb;
       noob.loseSelectedCards();

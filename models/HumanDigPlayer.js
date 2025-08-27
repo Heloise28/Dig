@@ -2,6 +2,13 @@ import { DigPlayer } from './DigPlayer.js';
 import { CardCombination } from './CardCombination.js';
 import readline from 'readline';
 
+/**
+ * @todo To enable AI suggestions for human players, 
+ * here I will later put a function that can create
+ * an AI Engine class depend on how strong you want 
+ * the AI enginie to be and help you to select cards.
+ * 
+ */
 
 export class HumanDigPlayer extends DigPlayer {
   constructor(name, seatNumber) {

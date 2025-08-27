@@ -2,7 +2,6 @@
 /**
  * @TODO
  * The score for each comb -> Can be the % that it's a turn winning comb.
- * I have a findStraightBreakingValues()!!, might be useful later for complex decision.
  */
 
 import { CardCombination } from "./CardCombination.js";
@@ -35,23 +34,70 @@ export class DigEasyAIEngine extends DigAIEngine {
     const tripleStraights = player.tripleStraights;
     const quadStraights = player.quadStraights;
 
-
     const isFirstRound = state.getIsFirstRound();        
     const valueToBeat = state.getValue();
-    const typeOfTurn = state.getType();
-    //Am I to start a round, to set combination type
-    //I can trust that the game engine will set valueToBeat to just one less than my lowest ♥
-    //setRoundType() handles first round ♥ requirement
-    if (state.getType() === CombType.NONE) {
-      const typeOfTurn = this.setRoundType(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, isFirstRound, valueToBeat);
-      console.log(`${player.name} set this round's combination type to ${typeOfTurn}`);
-    }
-
+    const isOpenRound = state.getIsOpenRound();
     const straightSizeOfTurn = state.getStraightSize();
+    const typeOfTurn = state.getType();
+
+    const playResult = this.getPlayFromHandler(
+      singles, 
+      pairs, 
+      triples, 
+      quads, 
+      straights, 
+      pairStraights, 
+      tripleStraights, 
+      quadStraights, 
+      straightSizeOfTurn, 
+      valueToBeat, 
+      typeOfTurn,
+      isFirstRound
+    );
+    
+    console.log(`${player.name} decided to play ${playResult}, but hasn't played them yet.`);
+
+    // First round (find heart) handled here.
+    const combToPlay = this.findCombsToPlay(
+      player, 
+      playResult, 
+      typeOfTurn, 
+      straightSizeOfTurn, 
+      isFirstRound, 
+      valueToBeat
+    );
+
+    console.log('Gonna select these cards: ' + combToPlay);
+    combToPlay.selectComb(); 
+
+    console.log(`And the picked comb looks like ${combToPlay.getSize() > 0 ? combToPlay.toShortString() : 'nothing'}.`);
+    console.log(`Is the comb selected? ${combToPlay.getSize() > 0 ? combToPlay.getCards()[0].isSelected : 'I don\'t know. Nothing is selected'}.`);
+
+    return combToPlay;
+  }
 
 
-    // Play decision based on typeOfTurn
+  /**
+   * Set the type of round to the type of which I have most combinations to play
+   * For first round, prioritizes types where the lowest value is exactly one above valueToBeat
+   * 
+   * @param {Array<Array<number>>} singles - 2D array of single card combinations
+   * @param {Array<Array<number>>} pairs - 2D array of pair combinations  
+   * @param {Array<Array<number>>} triples - 2D array of triple combinations
+   * @param {Array<Array<number>>} quads - 2D array of quad combinations
+   * @param {Array<Array<number>>} straights - 2D array of straight combinations
+   * @param {Array<Array<number>>} pairStraights - 2D array of pair straight combinations
+   * @param {Array<Array<number>>} tripleStraights - 2D array of triple straight combinations
+   * @param {Array<Array<number>>} quadStraights - 2D array of quad straight combinations
+   * @param {number} straightSizeOfTurn - Straight size to follow
+   * @param {number} valueToBeat - The minimum value that needs to be exceeded
+   * @param {CombType} typeOfTurn
+   * @returns {Array<number>} The type I want this round to follow
+   */
+  getPlayFromHandler(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, straightSizeOfTurn, valueToBeat, typeOfTurn, isFirstRound) {
+        // Play decision based on typeOfTurn
     let playResult;
+    console.log('So type of turn is ' + typeOfTurn + '. Start handling....');
 
     switch (typeOfTurn) {
         case CombType.SINGLE:
@@ -92,23 +138,29 @@ export class DigEasyAIEngine extends DigAIEngine {
             playResult.sort((a, b) => a - b);
             break;
             
+        case CombType.NONE:           
+            playResult = this.handleNoneTypePlay(
+              singles, 
+              pairs, 
+              triples, 
+              quads, 
+              straights, 
+              pairStraights, 
+              tripleStraights, 
+              quadStraights, 
+              typeOfTurn, 
+              straightSizeOfTurn, 
+              isFirstRound, 
+              valueToBeat);
+            break;
+            
         default:
             playResult = []; // Return empty array if unknown type
             break;
     }
-    console.log(`${player.name} decided to play ${playResult}, but hasn't played them yet.`);
 
-    const combToPlay = this.findCombsToPlay(player, playResult, isFirstRound, valueToBeat);
-    combToPlay.selectComb();
-
-    console.log(`And the picked comb looks like ${combToPlay.length > 0 ? combToPlay.toShortString() : 'nothing'}.`);
-    console.log(`Is the comb selected? ${combToPlay.length > 0 ? combToPlay.getCards()[0].isSelected : 'I don\'t know. Nothing is selected'}.`);
-
-    return combToPlay;
+    return playResult;
   }
-
-
-
 
   /**
    * Set the type of round to the type of which I have most combinations to play
@@ -125,9 +177,8 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @param {boolean} isFirstRound - Whether this is the first round
    * @param {number} valueToBeat - The minimum value that needs to be exceeded
    * @returns {CombType} The type I want this round to follow
-   */
-  setRoundType(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, isFirstRound, valueToBeat) {
-      
+  */
+  decideRoundType(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, isFirstRound, valueToBeat) {   
       // Helper function to get the first value of a combination type
       function getFirstValue(combinations) {
           if (!combinations || combinations.length === 0 || !combinations[0] || combinations[0].length === 0) {
@@ -151,11 +202,16 @@ export class DigEasyAIEngine extends DigAIEngine {
       let candidateTypes = allTypes;
       
       // First round optimization: narrow down to types where first value is exactly valueToBeat + 1
+      // This function rely on that:
+      /**
+       * @todo maybe a check?
+       */
+      // Game Engine will garantee that this player has valueToBeat + 1 of Heart
       if (isFirstRound) {
           const targetValue = valueToBeat + 1;
           const firstRoundCandidates = allTypes.filter(typeData => {
-              const firstValue = getFirstValue(typeData.combinations);
-              return firstValue === targetValue;
+              const allCombValues = this.flattenCombinations(typeData.combinations);                           
+              return allCombValues.includes(targetValue);
           });
           
           // Only use first round filtering if we found candidates
@@ -179,6 +235,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       candidateTypes.forEach(typeData => {
           const count = typeData.combinations.length;
           combCounts.get(count).push(typeData.type);
+          console.log('Found ' + count + ' ' +  typeData.type + '(s) as candidate types!');
       });
       
       // Find the type with the most combinations (highest priority within that count)
@@ -194,7 +251,7 @@ export class DigEasyAIEngine extends DigAIEngine {
 
 
 
-//--------------- Easy Logic for Handling All 8 Types --------------------------
+//--------------- Easy Handlers/Deciders for All 8 Types --------------------------
 //---------------             BEGINS                  --------------------------
 
   /**
@@ -405,7 +462,6 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @param {Array<Array<number>>} tripleStraights - 2D array of triple straight combinations (e.g., [[4,5,6], [7,8,9]])
    * @param {number} valueToBeat - The minimum value that needs to be exceeded
    * @param {number} straightSize - Straight size to follow
-   * 
    * @returns {Array<number>} - The best triple straight to play as 1D array, or empty array if none found
    */
   handleTripleStraightsPlay(tripleStraights, valueToBeat, straightSize) {
@@ -427,7 +483,55 @@ export class DigEasyAIEngine extends DigAIEngine {
       return this.findBestCandidate(allPossibleStraights, valueToBeat);
   }
 
-//--------------- Easy Logic for Handling All 8 Types --------------------------
+  /**
+   * Like this is an untility function, independent from AI level
+   * translate an array of card values to a CardCombination
+   * @param {Array<Array<Number>>} : all player max combinations
+   * @param: And many DigRoundStates Things
+   * @returns {Array<number>} Best type AND combination to play
+  */
+  handleNoneTypePlay(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, typeOfTurn, straightSizeOfTurn, isFirstRound, valueToBeat) {
+        
+    typeOfTurn = this.decideRoundType(
+      singles, 
+      pairs, 
+      triples, 
+      quads, 
+      straights, 
+      pairStraights, 
+      tripleStraights, 
+      quadStraights, 
+      isFirstRound, 
+      valueToBeat
+    );
+
+    console.log(`Decided this round's combination type to be ${typeOfTurn}`);
+
+    return this.getPlayFromHandler(
+      singles, 
+      pairs, 
+      triples, 
+      quads, 
+      straights, 
+      pairStraights, 
+      tripleStraights, 
+      quadStraights, 
+      straightSizeOfTurn, 
+      valueToBeat, 
+      typeOfTurn,
+      isFirstRound
+    );
+
+  
+
+  }
+
+  
+
+
+
+
+//--------------- Easy Handlers/Deciders for All 8 Types --------------------------
 //---------------             ENDS                  --------------------------
 
 
@@ -536,19 +640,19 @@ export class DigEasyAIEngine extends DigAIEngine {
                   // Check if removing this value would break the straight
                   // Breaking positions: 0, 1, length-2, length-1
                   const length = straight.length;
-                  if (valueIndex === 0 || valueIndex === 1 || 
-                      valueIndex === length - 2 || valueIndex === length - 1) {
+                  if (valueIndex === 1 || valueIndex === 2 || 
+                      valueIndex === length - 3 || valueIndex === length - 2) {
                       wouldBreakStraight = true;
                       break;
                   }
               }
           }
           
-          if (!wouldBreakStraight) {
+          if (wouldBreakStraight) {
               breakingValues.push(value);
           }
       }
-      
+      console.log(`${breakingValues.length > 0 ? straights + " would be broken by " + breakingValues : values + " don\'t break " + straights}`);
       return breakingValues;
   }
 
