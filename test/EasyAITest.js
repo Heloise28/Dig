@@ -18,21 +18,21 @@ console.log('Dig deck created:', digDeck.toString());
 
 const noob = new AIDigPlayer('Noob', 1, 1, Personality.NOOB_BOT);
 
-//For now don't deal random cards so I commented it out
 //noob.addCards(digDeck.dealTopCards(16));
 
 noob.addCards([
   new Card("4", Suit.CLUBS, true),
   new Card("4", Suit.HEARTS, true),
-  new Card("4", Suit.HEARTS, true),
   new Card("5", Suit.CLUBS, true),
   new Card("6", Suit.CLUBS, true),
   new Card("7", Suit.CLUBS, true),
-  
+  new Card("8", Suit.CLUBS, true),
+  new Card("8", Suit.CLUBS, true),
+  new Card("9", Suit.CLUBS, true),
+  new Card("J", Suit.CLUBS, true),
+  new Card("Q", Suit.CLUBS, true),
   new Card("K", Suit.CLUBS, true),
   new Card("A", Suit.CLUBS, true),
-  new Card("10", Suit.CLUBS, true),
-  new Card("J", Suit.CLUBS, true),
 ]);
 
 
@@ -49,13 +49,25 @@ let noobPlayed;
 
 const state = new DigRoundState();
 state.setType(CombType.NONE);
-state.setValue(3);
+state.setValue(0);
 state.setStraightSize(0);
-state.setIsFirstRound(true);
+state.setIsFirstRound(false);
 state.setIsOpenRound(true);
 
-noob.updateAvailableMaxCombs();
-noob.printAvailableMaxCombs();
+//----------- Later you find a good placec to update hand!! --------
+noob.updateHandAnalysis(); 
+/*
+console.log('\n------Noob started with these combs: -------');
+console.log(noob.AIEngine.singles);
+console.log(noob.AIEngine.pairs);
+console.log(noob.AIEngine.triples);
+console.log(noob.AIEngine.quads);
+console.log(noob.AIEngine.straights);
+console.log(noob.AIEngine.pairStraights);
+console.log(noob.AIEngine.tripleStraights);
+console.log(noob.AIEngine.quadStraights);
+console.log('----------------\n');
+*/
 
 let i = 0;
 while (noob.getHandSize() > 0 && i < 1) {

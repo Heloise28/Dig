@@ -6,6 +6,20 @@ import { DigRoundState } from "./DigRoundState.js";
 
 export class DigAIEngine {
 
+  constructor() {
+    //array of values of each type
+    this.singles = [];
+    this.pairs = [];
+    this.triples = [];
+    this.quads = [];
+    //straights are 2d arries.
+    this.straights = [];
+    this.pairStraights = [];
+    this.tripleStraights = [];
+    this.quadStraights = [];
+  }
+
+
   /**
  * @abstract
  * The core function, implemented by each AIEngine.
@@ -29,6 +43,7 @@ export class DigAIEngine {
    * @TODO As you build child class of harder AI
    * You may want to move some helper/utility functions from DigEasyAI to here.
    * Like I have a findStraightBreakingValues()!!, might be useful later for complex decision.
+   * also the generate sub straught and find all possible straights. I currently am not even using them.
    */
 
   
@@ -89,7 +104,105 @@ export class DigAIEngine {
     combToPlay.setStraightSize(straightSizeOfTurn);
 
     return combToPlay;
-
   }
+
+
+  
+
+
+/**
+ * Printer for available combinations, what ever nature they are.
+ */
+  printAvailableCombs(player) {
+       //helps printing
+      const TypesAndArrays = [
+          { type: CombType.SINGLE, array: this.singles },
+          { type: CombType.PAIR, array: this.pairs },
+          { type: CombType.TRIPLE, array: this.triples },
+          { type: CombType.QUAD, array: this.quads },
+          { type: CombType.STRAIGHT, array: this.straights },
+          { type: CombType.PAIR_STRAIGHT, array: this.pairStraights },
+          { type: CombType.TRIPLE_STRAIGHT, array: this.tripleStraights },
+          { type: CombType.QUAD_STRAIGHT, array: this.quadStraights }
+      ];
+
+
+    console.log(`\n=== ${player.getName()}'s Available Combinations ===`);
+
+    for (let typeInfo of TypesAndArrays) {
+        const combinations = [];
+        typeInfo.array.forEach ((comb) => {
+            const combination = this.buildCombinationDisplay(typeInfo.type, comb);
+            combinations.push(combination.join(''));
+        });
+
+        if (combinations.length > 0) {
+            console.log(`${typeInfo.type}: [${combinations.join(', ')}]`);
+        } else {
+            console.log(`${typeInfo.type}: (none)`);
+        }
+    }
+
+    console.log(`=======================================\n`);
+  }
+
+
+  buildCombinationDisplay(type, comb) {
+      const valueToDisplay = (val) => {
+          if (val === 11) return 'J';
+          if (val === 12) return 'Q'; 
+          if (val === 13) return 'K';
+          if (val === 14) return 'A';
+          if (val === 15) return '2';
+          if (val === 16) return '3';
+          return val.toString();
+      };
+      switch (type) {
+          case CombType.SINGLE:
+              return [valueToDisplay(comb[0])];
+              
+          case CombType.PAIR:
+              return [valueToDisplay(comb[0]), valueToDisplay(comb[0])];
+              
+          case CombType.TRIPLE:
+              return [valueToDisplay(comb[0]), valueToDisplay(comb[0]), valueToDisplay(comb[0])];
+              
+          case CombType.QUAD:
+              return [valueToDisplay(comb[0]), valueToDisplay(comb[0]), valueToDisplay(comb[0]), valueToDisplay(comb[0])];
+              
+          case CombType.STRAIGHT:
+              const straightCards = [];
+              for (let i = 0 ; i < comb.length; i++) {
+                  straightCards.push(valueToDisplay(comb[i]));
+              }
+              return straightCards;
+              
+          case CombType.PAIR_STRAIGHT:
+              const pairStraightCards = [];
+              for (let i = 0 ; i < comb.length; i++) {
+                  pairStraightCards.push(valueToDisplay(comb[i]), valueToDisplay(comb[i]));
+              }
+              return pairStraightCards;
+              
+          case CombType.TRIPLE_STRAIGHT:
+              const tripleStraightCards = [];
+              for (let i = 0 ; i < comb.length; i++) {
+                  tripleStraightCards.push(valueToDisplay(comb[i]), valueToDisplay(comb[i]), valueToDisplay(comb[i]));
+              }
+              return tripleStraightCards;
+              
+          case CombType.QUAD_STRAIGHT:
+              const quadStraightCards = [];
+              for (let i = 0 ; i < comb.length; i++) {
+                  quadStraightCards.push(valueToDisplay(comb[i]), valueToDisplay(comb[i]), valueToDisplay(comb[i]), valueToDisplay(comb[i]));
+              }
+              return quadStraightCards;
+              
+          default:
+              return [];
+      }
+  }
+
+
 
 }

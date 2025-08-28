@@ -35,7 +35,7 @@ export class AIDigPlayer extends DigPlayer {
    * 
    */
   getAISelectedComb(state) {
-    
+
     if (this.level === 1) {
       return this.AIEngine.getAIcombDecision(this, state);
     }

@@ -14,6 +14,8 @@ export class DigEasyAIEngine extends DigAIEngine {
 
 
 
+
+
 /**
  * @override
  * @param { CardCombination} availableCombinations
@@ -22,17 +24,18 @@ export class DigEasyAIEngine extends DigAIEngine {
  */
   getAIcombDecision(player, state) {
 
-    //Let's not have 8 getters...
+    // Let's not have 8 getters...
     //array of values of each type
-    const singles = player.singles;
-    const pairs = player.pairs;
-    const triples = player.triples;
-    const quads = player.quads;
-    //straights are 2d arries.
-    const straights = player.straights;
-    const pairStraights = player.pairStraights;
-    const tripleStraights = player.tripleStraights;
-    const quadStraights = player.quadStraights;
+    const singles = this.singles;
+    const pairs = this.pairs;
+    const triples = this.triples;
+    const quads = this.quads;
+    // straights are 2d arries.
+    // straights get's purified, excluded the ones that conflict too much with pairs and triples
+    const straights = this.straights;
+    const pairStraights = this.pairStraights;
+    const tripleStraights = this.tripleStraights;
+    const quadStraights = this.quadStraights;
 
     const isFirstRound = state.getIsFirstRound();        
     const valueToBeat = state.getValue();
@@ -55,7 +58,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       isFirstRound
     );
     
-    console.log(`${player.name} decided to play ${playResult}, but hasn't played them yet.`);
+    console.log(`${player.name} decided to play ${playResult}, but hasn't played them yet. (Message from getAIcombDecision(state))`);
 
     // First round (find heart) handled here.
     const combToPlay = this.findCombsToPlay(
@@ -67,15 +70,12 @@ export class DigEasyAIEngine extends DigAIEngine {
       valueToBeat
     );
 
-    console.log('Gonna select these cards: ' + combToPlay);
     combToPlay.selectComb(); 
 
     console.log(`And the picked comb looks like ${combToPlay.getSize() > 0 ? combToPlay.toShortString() : 'nothing'}.`);
-    console.log(`Is the comb selected? ${combToPlay.getSize() > 0 ? combToPlay.getCards()[0].isSelected : 'I don\'t know. Nothing is selected'}.`);
 
     return combToPlay;
   }
-
 
   /**
    * Set the type of round to the type of which I have most combinations to play
@@ -97,7 +97,7 @@ export class DigEasyAIEngine extends DigAIEngine {
   getPlayFromHandler(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, straightSizeOfTurn, valueToBeat, typeOfTurn, isFirstRound) {
         // Play decision based on typeOfTurn
     let playResult;
-    console.log('So type of turn is ' + typeOfTurn + '. Start handling....');
+    console.log('So type of turn is ' + typeOfTurn + '. Start handling.... (I\m in getPlayFromHandler() right before switch, which is inside getAIcombDecision(player, state))');
 
     switch (typeOfTurn) {
         case CombType.SINGLE:
@@ -109,7 +109,7 @@ export class DigEasyAIEngine extends DigAIEngine {
             break;
             
         case CombType.TRIPLE:
-            playResult = this.handleTriplesPlay(triples, straights, valueToBeat);
+            playResult = this.handleTriplesPlay(triples, quads, straights, valueToBeat);
             break;
             
         case CombType.QUAD:
@@ -117,7 +117,7 @@ export class DigEasyAIEngine extends DigAIEngine {
             break;
             
         case CombType.STRAIGHT:
-            playResult = this.handleStraightsPlay(straights, pairs, triples, valueToBeat, straightSizeOfTurn);
+            playResult = this.handleStraightsPlay(straights, valueToBeat, straightSizeOfTurn);
             break;
             
         case CombType.PAIR_STRAIGHT:
@@ -179,6 +179,7 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {CombType} The type I want this round to follow
   */
   decideRoundType(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, isFirstRound, valueToBeat) {   
+
       // Helper function to get the first value of a combination type
       function getFirstValue(combinations) {
           if (!combinations || combinations.length === 0 || !combinations[0] || combinations[0].length === 0) {
@@ -201,7 +202,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       
       let candidateTypes = allTypes;
       
-      // First round optimization: narrow down to types where first value is exactly valueToBeat + 1
+      // First round optimization: narrow down to types that has valueToBeat + 1
       // This function rely on that:
       /**
        * @todo maybe a check?
@@ -290,7 +291,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       // find pairs that exist in straights but don't exist in pair straights
       const candidatesFromPairs = pairs
           .filter(pair => {
-              if (!pair || pair.length < 2) return false;
+              if (!pair || pair.length === 0) return false;
               const pairValue = pair[0]; // All values in a pair are the same
               return valuesInStraights.includes(pairValue) && 
                     !valuesInPairStraights.includes(pairValue);
@@ -323,7 +324,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       
       // Find pairs that don't participate in any straights
       const pairsNotInStraights = pairs.filter(pair => {
-          if (!pair || pair.length < 2) return false;
+          if (!pair || pair.length === 0) return false;
           const pairValue = pair[0]; // All values in a pair are the same
           return !valuesInStraights.includes(pairValue);
       });
@@ -338,7 +339,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       const candidatesFromQuads = [];
       
       for (let quad of quads) {
-          if (!quad || quad.length < 4) continue;
+          if (!quad || quad.length === 0) continue;
           
           const quadValue = quad[0]; // All values in a quad are the same
           
@@ -355,7 +356,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       
       // Check triples for twos and threes
       for (let triple of triples) {
-          if (!triple || triple.length < 3) continue;
+          if (!triple || triple.length === 0) continue;
           
           const tripleValue = triple[0];
           
@@ -391,8 +392,16 @@ export class DigEasyAIEngine extends DigAIEngine {
    * 
    * @returns {Array<number>} - The best triple to play as 1D array, or empty array if none found
    */
-  handleTriplesPlay(triples, straights, valueToBeat) {
-      return this.handleHighValueCombinations(triples, straights, valueToBeat);
+  handleTriplesPlay(triples, quads, straights, valueToBeat) {
+      const candidates = this.handleHighValueCombinations(triples, straights, valueToBeat);
+      if (candidates.length === 0 && quads.length !== 0) {
+        let safeQuads;
+        // Filter 2 and 3 from quads
+        safeQuads = quads.filter(combination => {
+            return !combination && combination[0] > 14;
+        });
+      }
+      return this.findBestCandidate(candidates.push(...safeQuads), valueToBeat);
   }
 
   /**
@@ -409,39 +418,100 @@ export class DigEasyAIEngine extends DigAIEngine {
       return this.handleHighValueCombinations(quads, straights, valueToBeat);
   }
 
-    /**
-   * Handles the decision making for playing straights by finding the best straight to play
-   * while considering conflicts with pairs and triples, and prioritizing straights with Kings (13)
+  /**
+   * Generic helper function to handle triples or quads play decision
+   * Eliminates values that would break straights and finds the best candidate
    * 
-   * @param {Array<Array<number>>} straights - 2D array of straight combinations
-   * @param {Array<Array<number>>} pairs - 2D array of pair combinations
-   * @param {Array<Array<number>>} triples - 2D array of triple combinations
+   * @param {Array<Array<number>>} combinations - 2D array of triple or quad combinations
+   * @param {Array<Array<number>>} straights - 2D array of straight combinations (preserving groups)
    * @param {number} valueToBeat - The minimum value that needs to be exceeded
-   * @param {number} straightSize - Straight size to follow
-   * 
-   * @returns {Array<number>} - The best straight to play as 1D array, or empty array if none found
+   * @returns {Array<number>} - The best combination to play, or empty array if none found
    */
-  handleStraightsPlay(straights, pairs, triples, valueToBeat, straightSize) {
-      // Generate all possible straight combinations and sub-combinations
-      const allPossibleStraights = this.generateAllPossibleStraights(straights, straightSize);
+  handleHighValueCombinations(combinations, straights, valueToBeat) {
+      // Get all values from the combinations (triples or quads)
+      const allValues = this.flattenCombinations(combinations);
       
-      // Filter out straights that:
-      // 1. Don't involve K (value 13) AND
-      // 2. Conflict with pairs and triples
-      const candidateStraights = allPossibleStraights.filter(straight => {
-          const hasKing = straight.includes(13); // K has value 13
-          const hasConflict = this.hasConflictWithPairsTriples(straight, pairs, triples);
-          
-          // Keep straights that either:
-          // - Have a King (regardless of conflicts), OR
-          // - Don't have conflicts (regardless of King)
-          return hasKing || !hasConflict;
+      // Find values that would break straights if used (unsafe values)
+      const unsafeValues = this.findStraightBreakingValues(straights, allValues);
+      
+      // Filter original combinations to only include those with safe values (not in unsafe list)
+      const safeCombinations = combinations.filter(combination => {
+          if (!combination || combination.length === 0) return false;
+          const combinationValue = combination[0]; // All values in combination are the same
+          return !unsafeValues.includes(combinationValue);
       });
       
-      // Find the best candidate from filtered straights
-      return this.findBestCandidate(candidateStraights, valueToBeat);
+      // Find the best candidate from safe combinations
+      return this.findBestCandidate(safeCombinations, valueToBeat);
   }
 
+  /**
+   * Handles the decision making for playing straights by finding the best straight to play
+   * Now works with pure straights and considers straight size requirements
+   * 
+   * @param {Array<Array<number>>} straights - 2D array of pure straight combinations (conflicts already resolved)
+   * @param {number} valueToBeat - The minimum value that needs to be exceeded
+   * @param {number} straightSizeOfTurn - Required straight length (0 means use shortest available)
+   * 
+   * @returns {Array<number>} - The best straight to play as 1D array, or empty array if none found
+  */
+  handleStraightsPlay(straights, valueToBeat, straightSizeOfTurn) {
+    // If straightSizeOfTurn is 0, find the shortest available straight length
+    if (straightSizeOfTurn === 0) {
+    console.log('Straight size is zero? So I\'ll set it.')
+        for (let straight of straights) {
+            if (straight && straight.length >= 3) {
+                if (straightSizeOfTurn === 0 || straight.length < straightSizeOfTurn) {
+                    straightSizeOfTurn = straight.length;
+                }
+            }
+        }
+        console.log('Set this round straight size to ' + straightSizeOfTurn);
+        
+        // If no valid straights available, return empty
+        if (straightSizeOfTurn === 0) {
+            return [];
+        }
+    }
+    
+    const candidateStraights = [];
+
+    console.log('Looking for eligible straights from these.:', straights);
+    console.log("Value to beat: ", valueToBeat);
+    // Find straights with length >= 3 and max value > valueToBeat
+    const eligibleStraights = straights.filter(straight => 
+        straight && straight.length >= 3 && 
+        straight[straight.length - 1] > valueToBeat
+    );
+    console.log('Eligible Sraights ready to be processed: ', eligibleStraights);
+    
+    // Process each eligible straight
+    for (let straight of eligibleStraights) {
+        if (straight.length === straightSizeOfTurn) {
+            // If straight length exactly matches target size, add it directly
+            candidateStraights.push([...straight]);
+            console.log('Found size match, candicates are: ', straight);
+        } else if (straight.length >= straightSizeOfTurn + 3) {
+            // Add head and tail sub straight first
+            candidateStraights.push(straight.slice(0, straightSizeOfTurn));
+            candidateStraights.push(straight.slice(straight.length - straightSizeOfTurn, straight.length));
+            console.log('Found big and head tail match, candicates are: ', candidateStraights);
+
+            if (straight.length >= straightSizeOfTurn + 6) {
+            // Find all sections of straightSizeOfTurn within this straight
+            // Sections must be at least 3 numbers away from head/tail
+                for (let start = 3; start <= straight.length - straightSizeOfTurn - 3; start++) {
+                    const section = straight.slice(start, start + straightSizeOfTurn);
+                    candidateStraights.push(section);
+                }
+            console.log('Found super match, candicates are: ', candidateStraights);
+            }
+        }
+    }
+    
+    // Find the best candidate from all valid straight sections
+    return this.findBestCandidate(candidateStraights, valueToBeat);
+  }
     /**
    * Handles the decision making for playing pair straights by finding the best pair straight to play
    * 
@@ -491,7 +561,6 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {Array<number>} Best type AND combination to play
   */
   handleNoneTypePlay(singles, pairs, triples, quads, straights, pairStraights, tripleStraights, quadStraights, typeOfTurn, straightSizeOfTurn, isFirstRound, valueToBeat) {
-        
     typeOfTurn = this.decideRoundType(
       singles, 
       pairs, 
@@ -521,15 +590,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       typeOfTurn,
       isFirstRound
     );
-
-  
-
   }
-
-  
-
-
-
 
 //--------------- Easy Handlers/Deciders for All 8 Types --------------------------
 //---------------             ENDS                  --------------------------
@@ -542,6 +603,9 @@ export class DigEasyAIEngine extends DigAIEngine {
 
 //--------------- Helpers for Easy Logic for Handling All 8 Types --------------------------
 //---------------                     BEGINS                      --------------------------
+
+
+
   /**
    * Generates all possible straight sub-combinations from a given straight
    * Minimum straight length is 3, so generates all contiguous subsequences of length 3 or more
@@ -655,34 +719,6 @@ export class DigEasyAIEngine extends DigAIEngine {
       console.log(`${breakingValues.length > 0 ? straights + " would be broken by " + breakingValues : values + " don\'t break " + straights}`);
       return breakingValues;
   }
-
-  /**
-   * Generic helper function to handle triples or quads play decision
-   * Eliminates values that would break straights and finds the best candidate
-   * 
-   * @param {Array<Array<number>>} combinations - 2D array of triple or quad combinations
-   * @param {Array<Array<number>>} straights - 2D array of straight combinations (preserving groups)
-   * @param {number} valueToBeat - The minimum value that needs to be exceeded
-   * @returns {Array<number>} - The best combination to play, or empty array if none found
-   */
-  handleHighValueCombinations(combinations, straights, valueToBeat) {
-      // Get all values from the combinations (triples or quads)
-      const allValues = this.flattenCombinations(combinations);
-      
-      // Find values that would break straights if used (unsafe values)
-      const unsafeValues = this.findStraightBreakingValues(straights, allValues);
-      
-      // Filter original combinations to only include those with safe values (not in unsafe list)
-      const safeCombinations = combinations.filter(combination => {
-          if (!combination || combination.length === 0) return false;
-          const combinationValue = combination[0]; // All values in combination are the same
-          return !unsafeValues.includes(combinationValue);
-      });
-      
-      // Find the best candidate from safe combinations
-      return this.findBestCandidate(safeCombinations, valueToBeat);
-  }
-
     /**
    * Flattens a 2D array of card combinations into a single array of all values
    * Since the original 2D array is already optimized without repeats, no deduplication needed
@@ -791,315 +827,226 @@ export class DigEasyAIEngine extends DigAIEngine {
 
 
 
-
-
-
-
-
-
-
-
-
-
+  //--------------- Update All Less Conflicting Combinations --------------------------
+  //---------------                     BEGINS                    --------------------------
+    
   /**
-  * Can only be called within DigAIEngine!!
-  * So that the comb is sure to be from player's deck
-  * @param { CardCombination } comb
-  */
-  static selectCardsInAComb(comb) {
-    for (const card of comb.getCards()) {
-        card.selectCard();
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  /**
-   * @TODO 下面这是随便写的
+   * Calls updateAvailableMaxCombs() and update all combinations from it
    */
-  makeBidDecision() {
-    let bigCardCount = this.hand.countCardsByRank('A') 
-    + this.hand.countCardsByRank('2')
-    + this.hand.countCardsByRank('3');
 
-    if (bigCardCount > 5) {
-        return 3;
-    } else if (bigCardCount > 4) {
-        return 2;
-    } else if (bigCardCount > 3) {
-        return 1;
-    } else {
-        return 0;
-    }
+  updateLessConflictingCombs(player) {
+    const countOfEachValue = player.getCountOfEachValue();
+    this.updateAvailableMaxCombs(countOfEachValue);
+    this.updateLessConflictingStraights(this.straights, this.pairs, this.triples);
+    this.printAvailableCombs(player);
   }
 
-    
-    
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  //------------------    Find cards conflicts in a player's available combinations    ----------------
-  //------------------                           BEGINS                                ----------------
-  
   /**
-   *  *** IMPORTANT ***
+   * Creates pure/unconflicting straights by removing conflicting values and regrouping
+   * To replace straights in the main 
    * 
-   * 8.25.2025
-   * I don't want this because these functions take a Card combination with Card objects, 
-   * and I think it's more efficient to have data structures with just numbers and the enum of card types.
-   * Will be easier to compute and then I'll get a result and then turn it into a card combination.
+   * @param {Array<Array<number>>} straights - 2D array of straight groups (consecutive numbers)
+   * @param {Array<Array<number>>} pairs - 2D array of pair combinations
+   * @param {Array<Array<number>>} triples - 2D array of triple combinations
+   * @returns {Array<Array<number>>} - New 2D array of pure straights with conflicts removed
+   * 
+   * @example
+   * // If straights = [[4,5,6,7,8]], pairs = [[5,5]], triples = [[7,7,7]]
+   * // Conflicts = [5,7], length = 5, threshold = 5/4 = 1.25
+   * // Since 2 > 1.25, conflicts are removed: group becomes [4,6,8]
+   * // After regrouping: [] (no consecutive groups of 3+)
    */
-
-/**
- * Finds all combinations that would be destroyed if the given combo is played
- * Accounts for multiple cards of same value - playing one card may not destroy
- * other combinations if there are spare cards of that value
- * @param {CardCombination} combo - The combination to play
- * @param {Map} availableCombinations - Map of [type, combinations[]] from updateAvailableCombinations
- * @return {Map} - Map of [type, conflictingCombinations[]] that would be destroyed
- */
-findConflictingCombinations(combo, player) {
-  const availableCombinations = player.getAvailableCombinations();
-  const conflictingCombinations = new Map();
-  
-  // Initialize result map with empty arrays
-  for (const [type] of availableCombinations) {
-    conflictingCombinations.set(type, []);
-  }
-  
-  // Step 1: Count how many cards of each value we have total
-  const totalValueCounts = player.getValueCounts();
-  
-  // Step 2: Count how many cards of each value the combo consumes
-  const comboValueConsumption = this.getValueCounts(combo.getCards());
-  
-  // Step 3: For each other combination, check if playing combo would leave insufficient cards
-  for (const [type, combinations] of availableCombinations) {
-    for (const otherCombo of combinations) {
-      if (otherCombo === combo) continue;
+  updateLessConflictingStraights(straights, pairs, triples) {
+      // Get all values that exist in pairs and triples (excluding Kings)
+      const pairValues = this.flattenCombinations(pairs);
+      const tripleValues = this.flattenCombinations(triples);
+      const conflictingValues = [...pairValues, ...tripleValues].filter(value => value < 13);
       
-      if (this.wouldConflict(comboValueConsumption, otherCombo, totalValueCounts)) {
-        conflictingCombinations.get(type).push(otherCombo);
-      }
-    }
-  }
-  
-  return conflictingCombinations;
-}
-
-/**
- * Optimized version that directly analyzes card requirements
- * @param {CardCombination} combo - The combination to play
- * @param {Map} availableCombinations - All available combinations
- * @return {Map} - Map of conflicting combinations
- */
-findConflictingCombinationsOptimized(combo, availableCombinations) {
-  const conflictingCombinations = new Map();
-  
-  // Initialize result map
-  for (const [type] of availableCombinations) {
-    conflictingCombinations.set(type, []);
-  }
-  
-  // Step 1: Quick analysis - count available cards per value by checking combination types
-  const availableCards = this.getAvailableCardCounts(availableCombinations);
-  
-  // Step 2: Get consumption pattern of the combo to play
-  const comboConsumption = this.getValueCounts(combo.getCards());
-  
-  // Step 3: For each combination, check if sufficient cards remain after playing combo
-  for (const [type, combinations] of availableCombinations) {
-    for (const otherCombo of combinations) {
-      if (otherCombo === combo) continue;
+      const modifiedGroups = [];
       
-      if (this.hasInsufficientCards(availableCards, comboConsumption, otherCombo)) {
-        conflictingCombinations.get(type).push(otherCombo);
-      }
-    }
-  }
-  
-  return conflictingCombinations;
-}
+      // Process each straight group
+      for (let group of straights) {
+          if (!group || group.length < 3) continue;
+          
+          // Find overlapping numbers in this group
+          const overlappingNumbers = group.filter(value => 
+              value < 13 && conflictingValues.includes(value)
+          );
+          
+          // Check if we should remove conflicts from this group
+          const conflictThreshold = (group.length / 4) + 1;
 
-/**
- * Efficiently determines available card counts by analyzing combination types
- * @param {Map} availableCombinations - All available combinations
- * @return {Map} - Map of value to available count
- */
-getAvailableCardCounts(availableCombinations) {
-  const availableCards = new Map();
-  
-  // Strategy: For each value, find the highest combination type to infer total cards
-  const valueToMaxCombo = new Map();
-  
-  for (const [type, combinations] of availableCombinations) {
-    for (const combo of combinations) {
-      if (this.isStraightType(type)) {
-        // For straights, analyze each value individually
-        const valueCounts = this.getValueCounts(combo.getCards());
-        for (const [value, count] of valueCounts) {
-          const currentMax = valueToMaxCombo.get(value) || { type: null, count: 0 };
-          if (count > currentMax.count) {
-            valueToMaxCombo.set(value, { type, count });
+          if (overlappingNumbers.length <= conflictThreshold) {
+              // Don't touch this group - conflicts are acceptable
+              modifiedGroups.push([...group]);
+          } else {
+              // Remove conflicting numbers from the group
+              const cleanedGroup = group.filter(value => 
+                  value >= 13 || !conflictingValues.includes(value)
+              );
+              
+              if (cleanedGroup.length > 0) {
+                  modifiedGroups.push(cleanedGroup);
+              }
           }
-        }
-      } else {
-        // For same-value combinations
-        const value = combo.getCards()[0].getValue();
-        const count = this.getCardCountForComboType(type);
-        const currentMax = valueToMaxCombo.get(value) || { type: null, count: 0 };
-        if (count > currentMax.count) {
-          valueToMaxCombo.set(value, { type, count });
-        }
       }
-    }
+      
+      // Flatten all modified groups and regroup into consecutive sequences of 3+
+      const allRemainingValues = modifiedGroups.flat().sort((a, b) => a - b);
+      
+      this.straights = this.regroupConsecutiveValues(allRemainingValues);
   }
-  
-  // Convert to final counts
-  for (const [value, maxCombo] of valueToMaxCombo) {
-    availableCards.set(value, maxCombo.count);
+
+  /**
+   * Regroups an array of values into consecutive sequences of minimum length 3
+   * Consecutive groups are automatically joined together
+   * 
+   * @param {Array<number>} values - Sorted array of values to regroup
+   * @returns {Array<Array<number>>} - 2D array of consecutive groups (minimum length 3)
+   * 
+   * @example
+   * // Input: [4,5,7,8,9,11,12,13]
+   * // Output: [[4,5], [7,8,9], [11,12,13]] -> filter length 3+ -> [[7,8,9], [11,12,13]]
+   */
+  regroupConsecutiveValues(values) {
+      if (!values || values.length === 0) {
+          return [];
+      }
+      
+      const groups = [];
+      let currentGroup = [values[0]];
+      
+      // Group consecutive values
+      for (let i = 1; i < values.length; i++) {
+          // Check if current value is consecutive to the last value in current group
+          if (values[i] === values[i-1] + 1) {
+              currentGroup.push(values[i]);
+          } else {
+              // End current group and start a new one
+              groups.push(currentGroup);
+              currentGroup = [values[i]];
+          }
+      }
+      
+      // Don't forget the last group
+      groups.push(currentGroup);
+      console.log("Pure groups just made and ready to go (has less than 3s) ", groups);
+      
+      // Filter out groups with less than 3 elements (minimum straight size)
+      return groups.filter(group => group.length >= 3);
   }
-  
-  return availableCards;
-}
 
-/**
- * Gets the number of cards required for a combination type
- * @param {string} type - Combination type
- * @return {number} - Number of cards of same value required
- */
-getCardCountForComboType(type) {
-  switch (type) {
-    case CombType.SINGLE: return 1;
-    case CombType.PAIR: return 2;
-    case CombType.TRIPLE: return 3;
-    case CombType.QUAD: return 4;
-    default: return 1;
+//--------------- Update All Limitedly Conflicting Combinations --------------------------
+//---------------                     ENDS                    --------------------------
+  
+
+
+  // -----------   Update Available **Max** Combinations   ----------
+  // -----------             BEGINS                ----------
+
+  /**
+   * Updates arrays of the 8 types with all maximum possible combinations from current hand.
+   * Simple two-pass approach: non-straights first, then straights by consecutive groups.
+   * @param {Map} countOfEachValue
+   */
+  updateAvailableMaxCombs(countOfEachValue) {
+
+      // Pass 1: Process non-straight combinations
+      this.processNonStraights(countOfEachValue);
+      // Pass 2: Process straight combinations
+      this.processStraights(countOfEachValue);
   }
-}
 
-/**
- * Checks if playing a combo would leave insufficient cards for another combination
- * @param {Map} availableCards - Total cards available per value
- * @param {Map} comboConsumption - Cards consumed by combo to play
- * @param {CardCombination} otherCombo - Other combination to check
- * @return {boolean} - True if insufficient cards would remain
- */
-hasInsufficientCards(availableCards, comboConsumption, otherCombo) {
-  const otherRequirements = this.getValueCounts(otherCombo.getCards());
-  
-  for (const [value, requiredCount] of otherRequirements) {
-    const totalAvailable = availableCards.get(value) || 0;
-    const consumedByCombo = comboConsumption.get(value) || 0;
-    const remaining = totalAvailable - consumedByCombo;
-    
-    if (remaining < requiredCount) {
-      return true; // Conflict: insufficient cards
-    }
+  /**
+   * Processes all straight combinations by finding consecutive groups
+   * 
+   */
+  processNonStraights(countOfEachValue) {
+
+    // map.forEach((value, key, map) => { ... }) Value first, then key!!!
+    countOfEachValue.forEach((count, value) => {
+        // Add maximum combination type for this value
+        if (count >= 4) {
+            this.quads.push([value]);
+        } else if (count >= 3) {
+            this.triples.push([value]);
+        } else if (count >= 2) {
+            this.pairs.push([value]);
+        } else {
+            this.singles.push([value]);
+        }
+    });
+
   }
-  
-  return false; // No conflict
-}
+  /**
+   * Processes all straight combinations by finding consecutive groups
+   * and determining the minimum multiplicity for each group
+   */
+  processStraights(countOfEachValue) {
 
-/**
- * Simplified conflict check (fallback method)
- * @param {Map} comboValueConsumption - Cards consumed by combo to play  
- * @param {CardCombination} otherCombo - Other combination to check
- * @param {Map} totalValueCounts - Total available cards per value
- * @return {boolean} - True if combinations would conflict
- */
-wouldConflict(comboValueConsumption, otherCombo, totalValueCounts) {
-  const otherRequirements = this.getValueCounts(otherCombo.getCards());
-  
-  for (const [value, otherNeeds] of otherRequirements) {
-    const comboConsumes = comboValueConsumption.get(value) || 0;
-    const totalAvailable = totalValueCounts.get(value) || 0;
-    
-    if (totalAvailable - comboConsumes < otherNeeds) {
-      return true; // Conflict
-    }
+      let singles = [], pairs = [], triples = [], quads = [];
+      countOfEachValue.forEach((count, value) => {
+          if (value >= 4 && value <= 13) {
+              singles.push(value);
+              if (count > 1) pairs.push(value);
+              if (count > 2) triples.push(value);
+              if (count > 3) quads.push(value);
+          }
+      });
+
+      // Find consecutive groups
+      singles = this.findConsecutiveGroups(singles);
+      pairs = this.findConsecutiveGroups(pairs);
+      triples = this.findConsecutiveGroups(triples);
+      quads = this.findConsecutiveGroups(quads);
+
+      this.straights = singles;
+      this.pairStraights = pairs;
+      this.tripleStraights = triples;
+      this.quadStraights = quads;
   }
-  
-  return false; // No conflict
-}
 
-/**
- * Checks if a combination type is a straight type
- * @param {string} type - The combination type
- * @return {boolean} - True if it's a straight type
- */
-isStraightType(type) {
-  return type === CombType.STRAIGHT || 
-         type === CombType.PAIR_STRAIGHT || 
-         type === CombType.TRIPLE_STRAIGHT || 
-         type === CombType.QUAD_STRAIGHT;
-}
+  /**
+   * Finds all consecutive groups from sorted values that are at least 3 cards long
+   * @param {Array} values - array of values
+   * @returns {Array} 2D array where each sub-array is a consecutive group of ≥3 cards
+   */
+  findConsecutiveGroups(values) {
 
-  //------------------    Find cards conflicts in a player's available combinations    ----------------
-  //------------------                            ENDS                                 ----------------
+      //need at least 3 to form a straight
+      if (values.length < 3) return [];
 
+      //sort asc
+      values.sort((a, b) => a - b);
 
+      const groups = [];
+      let currentGroup = [values[0]];
 
+      for (let i = 1; i < values.length; i++) {
+          if (values[i] === values[i-1] + 1) {
+              // Consecutive, add to current group
+              currentGroup.push(values[i]);
+          } else {
+              // Not consecutive, save current group if valid and start new one
+              if (currentGroup.length >= 3) {
+                  groups.push(currentGroup);
+              }
+              currentGroup = [values[i]];
+          }
+      }
+      
+      // Don't forget the last group
+      if (currentGroup.length >= 3) {
+          groups.push(currentGroup);
+      }
+      
+      return groups;
+  }
 
+  // -----------   Update Available **Max** Combinations   ----------
+  // -----------              ENDS                 ----------
 
-
-
-
-
-
-
-  
 
 
 

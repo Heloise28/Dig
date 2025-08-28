@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "test": "node test/test.js",
-    "smalltest": "node test/smalltest.js",
+    "EasyAITest": "node test/EasyAITest.js",
     "dev": "echo 'Development server setup will be added later'",
     "build": "echo 'Build process will be added later'",
     "deploy": "echo 'Deploy process will be added later'"
