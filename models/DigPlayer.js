@@ -148,7 +148,7 @@ export class DigPlayer {
     
     if (!this.isHuman) {
       if (this.level === 1) {
-        this.AIEngine.updateLessConflictingCombs(this);
+        this.AIEngine.updateSafeCombs(this);
       }
     }
   }

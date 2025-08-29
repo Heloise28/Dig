@@ -60,7 +60,7 @@ export class DigAIEngine {
       console.log('You asked me to find comb of nothing.');
       return new CardCombination([]);
     }
-
+    console.log(`I go get these cards from your hand: ${values}`);
     //foundCards is an array<Card>
     const foundCards = player.getHand().getCardsByValue(values);
     console.log('Hmm...So AI picked these cards: ' + foundCards);

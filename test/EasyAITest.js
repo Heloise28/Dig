@@ -23,11 +23,21 @@ const noob = new AIDigPlayer('Noob', 1, 1, Personality.NOOB_BOT);
 noob.addCards([
   new Card("4", Suit.CLUBS, true),
   new Card("4", Suit.HEARTS, true),
+  new Card("4", Suit.HEARTS, true),
+  new Card("4", Suit.HEARTS, true),
+  new Card("5", Suit.CLUBS, true),
+  new Card("5", Suit.CLUBS, true),
+  new Card("5", Suit.CLUBS, true),
+  new Card("5", Suit.CLUBS, true),
   new Card("5", Suit.CLUBS, true),
   new Card("6", Suit.CLUBS, true),
+  new Card("6", Suit.CLUBS, true),
+  new Card("6", Suit.CLUBS, true),
+  new Card("6", Suit.CLUBS, true),
   new Card("7", Suit.CLUBS, true),
-  new Card("8", Suit.CLUBS, true),
-  new Card("8", Suit.CLUBS, true),
+  new Card("7", Suit.CLUBS, true),
+  new Card("7", Suit.CLUBS, true),
+  new Card("9", Suit.CLUBS, true),
   new Card("9", Suit.CLUBS, true),
   new Card("J", Suit.CLUBS, true),
   new Card("Q", Suit.CLUBS, true),
@@ -48,11 +58,11 @@ console.log(noob.toString());
 let noobPlayed;
 
 const state = new DigRoundState();
-state.setType(CombType.NONE);
+state.setType(CombType.QUAD_STRAIGHT);
 state.setValue(0);
-state.setStraightSize(0);
+state.setStraightSize(3);
 state.setIsFirstRound(false);
-state.setIsOpenRound(true);
+state.setIsOpenRound(false);
 
 //----------- Later you find a good placec to update hand!! --------
 noob.updateHandAnalysis(); 
@@ -87,7 +97,7 @@ while (noob.getHandSize() > 0 && i < 1) {
       //update what noob player played in this turn
       noobPlayed = selectedComb;
       noob.loseSelectedCards();
-      console.log('John plays: ' + noobPlayed);
+      console.log('Noob plays: ' + noobPlayed);
       console.log(noob.toString());
     } else {
       console.log('can\'t play this!');
