@@ -168,7 +168,6 @@ export class CardCombination {
   //selcted cards in the comb
   selectComb() {
     for (const card of this.cards) {
-      console.log('Selecting: ' + card);
       card.selectCard();
     } 
   }

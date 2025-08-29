@@ -28,6 +28,24 @@ export class DigEasyAIEngine extends DigAIEngine {
     const straightSizeOfTurn = state.getStraightSize();
     const typeOfTurn = state.getType();
 
+    //check roud state for testing
+    if (CombType.isValid(typeOfTurn)) {
+        if (typeOfTurn === CombType.NONE) {
+          if (straightSizeOfTurn !== 0 || valueToBeat !== 0) {
+            throw new Error('Open Round, straight size and value to beat must be 0');
+          }
+        } else if (typeOfTurn === CombType.STRAIGHT
+           || typeOfTurn === CombType.PAIR_STRAIGHT
+           || typeOfTurn === CombType.TRIPLE_STRAIGHT
+           || typeOfTurn === CombType.QUAD_STRAIGHT) {
+              if (straightSizeOfTurn === 0) {
+                  throw new Error('Straight Round, straight size must NOT be 0');
+              }
+           }
+    } else {
+      throw new Error("Type of Combination of Turn, N\'EXISTE PAS!");
+    }
+
     const playResult = this.getPlayFromHandler(
       straightSizeOfTurn, 
       valueToBeat, 
@@ -97,17 +115,17 @@ export class DigEasyAIEngine extends DigAIEngine {
             break;
             
         case CombType.STRAIGHT:
-            playResult = this.handleStraightsPlay(valueToBeat, straightSizeOfTurn);
+            playResult = this.handleStraightsPlay(this.straights, valueToBeat, straightSizeOfTurn);
             break;
             
         case CombType.PAIR_STRAIGHT:
-            playResult = this.handlePairStraightsPlay(valueToBeat, straightSizeOfTurn);
+            playResult = this.handleRepeatStraightsPlay(this.pairStraights, valueToBeat, straightSizeOfTurn);
             playResult.push(...playResult);
             playResult.sort((a, b) => a - b);
             break;
             
         case CombType.TRIPLE_STRAIGHT:
-            let tempTripStr = this.handleTripleStraightsPlay(valueToBeat, straightSizeOfTurn);
+            let tempTripStr = this.handleRepeatStraightsPlay(this.tripleStraights, valueToBeat, straightSizeOfTurn);
             for (const value of tempTripStr) {
               playResult.push(value);
               playResult.push(value);
@@ -117,7 +135,7 @@ export class DigEasyAIEngine extends DigAIEngine {
             break;
             
         case CombType.QUAD_STRAIGHT:
-            playResult = this.handleQuadStraightsPlay(valueToBeat, straightSizeOfTurn);
+            playResult = this.handleRepeatStraightsPlay(this.quadStraights, valueToBeat, straightSizeOfTurn);
             playResult.push(...playResult);
             playResult.push(...playResult);
             playResult.sort((a, b) => a - b);
@@ -135,7 +153,6 @@ export class DigEasyAIEngine extends DigAIEngine {
             playResult = []; // Return empty array if unknown type
             break;
     }
-        console.log(`Decided to play `, playResult);
     return playResult;
   }
 
@@ -271,8 +288,12 @@ export class DigEasyAIEngine extends DigAIEngine {
           const tripleValue = triple[0];
           
           // If we have triples of value 15 (twos) or 16 (threes)
-          if (tripleValue === 15 || tripleValue === 16) {
-              candidates.push([tripleValue, tripleValue]);
+          if (tripleValue === 15 && candidates[candidates.length-1] < 15) {
+              candidates.push([tripleValue]);
+          }
+
+          if (tripleValue === 16 && candidates[candidates.length-1] < 16) {
+              candidates.push([tripleValue]);
           }
       }
       
@@ -283,8 +304,11 @@ export class DigEasyAIEngine extends DigAIEngine {
           const quadValue = quad[0];
           
           // If we have quads of value 15 (twos) or 16 (threes)
-          if (quadValue === 15 || quadValue === 16) {
-              candidates.push([quadValue, quadValue]);
+          if (quadValue === 15 || candidates[candidates.length-1] < 15) {
+              candidates.push([quadValue]);
+          }
+          if (quadValue === 16 || candidates[candidates.length-1] < 16) {
+              candidates.push([quadValue]);
           }
       }
       
@@ -303,15 +327,19 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {Array<number>} - The best triple to play as 1D array, or empty array if none found
    */
   handleTriplesPlay(valueToBeat) {
-      const candidates = this.handleHighValueCombinations(this.triples, this.straights, this.valueToBeat);
-      let safeQuads;
-      if (candidates.length === 0 && quads.length !== 0) {
-        // Steal 2 and 3 from quads
+
+      console.log('GAGU', valueToBeat);
+      const candidates = this.triples;
+
+      let safeQuads = [];
+      // steal 2 and 3 from quads too
+      if (this.quads.length !== 0) {
             safeQuads = this.quads.filter(combination => {
-            return !combination && combination[0] > 14;
+            return combination && combination[0] > 14;
         });
       }
-      return this.findBestCandidate(candidates.push(...safeQuads), valueToBeat);
+      candidates.push(...safeQuads);  
+      return this.findBestCandidate(candidates, valueToBeat);
   }
 
   /**
@@ -325,20 +353,30 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {Array<number>} - The best quad to play as 1D array, or empty array if none found
    */
   handleQuadsPlay(valueToBeat) {
-      return this.handleHighValueCombinations(this.quads, this.straights, valueToBeat);
+      return this.findBestCandidate(this.quads, valueToBeat);
   }
 
-  /**
-   * Generic helper function to handle triples or quads play decision
-   * Eliminates values that would break straights and finds the best candidate
-   * 
-   * @param {Array<Array<number>>} combinations - 2D array of triple or quad combinations
-   * @param {Array<Array<number>>} straights - 2D array of straight combinations (preserving groups)
-   * @param {number} valueToBeat - The minimum value that needs to be exceeded
-   * @returns {Array<number>} - The best combination to play, or empty array if none found
-   */
-  handleHighValueCombinations(combinations, valueToBeat) {
-      return this.findBestCandidate(combinations, valueToBeat);
+  handleStraightsPlay(straights, valueToBeat, straightSizeOfTurn) {
+    // If straightSizeOfTurn is 0, find the first available straight
+    // If we get to this situation, that means open round and type set to straight
+    // Which means there is at least a straight to play
+    // And Value to beat is 0
+    if (straightSizeOfTurn === 0) {
+      return straights[0];
+    }
+
+    // If no straights available, return empty
+    if (straights.length === 0) {
+        return [];
+    }
+    // Find straights with length >= 3 and max value > valueToBeat
+    const straightsThatBeats = this.getStraightsThatBeats (straights, valueToBeat);
+
+    const candidateStraights = this.generateSafePossibleStraights(straightsThatBeats, straightSizeOfTurn);
+    
+    // Find the best candidate from all valid straight sections
+    return this.findBestCandidate(candidateStraights, valueToBeat);
+
   }
 
   /**
@@ -351,63 +389,30 @@ export class DigEasyAIEngine extends DigAIEngine {
    * 
    * @returns {Array<number>} - The best straight to play as 1D array, or empty array if none found
   */
-  handleStraightsPlay(valueToBeat, straightSizeOfTurn) {
-    // If straightSizeOfTurn is 0, find the shortest available straight length
+  handleRepeatStraightsPlay(straights, valueToBeat, straightSizeOfTurn) {
+    // If straightSizeOfTurn is 0, find the first available straight
+    // If we get to this situation, that means open round and type set to straight
+    // Which means there is at least a straight to play
+    // And Value to beat is 0
     if (straightSizeOfTurn === 0) {
-    console.log('Straight size is zero? So I\'ll set it.')
-        for (let straight of this.straights) {
-            if (straight && straight.length >= 3) {
-                if (straightSizeOfTurn === 0 || straight.length < straightSizeOfTurn) {
-                    straightSizeOfTurn = straight.length;
-                }
-            }
-        }
-        console.log('Set this round straight size to ' + straightSizeOfTurn);
-        
-        // If no valid straights available, return empty
-        if (straightSizeOfTurn === 0) {
-            return [];
-        }
+      return straights[0];
     }
-    
-    const candidateStraights = [];
 
-    console.log('Looking for eligible straights from these.:', this.straights);
-    console.log("Value to beat: ", valueToBeat);
+    // If no straights available, return empty
+    if (straights.length === 0) {
+        return [];
+    }
+
     // Find straights with length >= 3 and max value > valueToBeat
-    const eligibleStraights = straights.filter(straight => 
-        straight && straight.length >= 3 && 
-        straight[straight.length - 1] > valueToBeat
-    );
-    console.log('Eligible Sraights ready to be processed: ', eligibleStraights);
-    
-    // Process each eligible straight
-    for (let straight of eligibleStraights) {
-        if (straight.length === straightSizeOfTurn) {
-            // If straight length exactly matches target size, add it directly
-            candidateStraights.push([...straight]);
-            console.log('Found size match, candicates are: ', straight);
-        } else if (straight.length >= straightSizeOfTurn + 3) {
-            // Add head and tail sub straight first
-            candidateStraights.push(straight.slice(0, straightSizeOfTurn));
-            candidateStraights.push(straight.slice(straight.length - straightSizeOfTurn, straight.length));
-            console.log('Found big and head tail match, candicates are: ', candidateStraights);
+    const straightsThatBeats = this.getStraightsThatBeats (straights, valueToBeat);
 
-            if (straight.length >= straightSizeOfTurn + 6) {
-            // Find all sections of straightSizeOfTurn within this straight
-            // Sections must be at least 3 numbers away from head/tail
-                for (let start = 3; start <= straight.length - straightSizeOfTurn - 3; start++) {
-                    const section = straight.slice(start, start + straightSizeOfTurn);
-                    candidateStraights.push(section);
-                }
-            console.log('Found super match, candicates are: ', candidateStraights);
-            }
-        }
-    }
+    const candidateStraights = this.generateSafePossibleStraights(straightsThatBeats, straightSizeOfTurn);
     
     // Find the best candidate from all valid straight sections
     return this.findBestCandidate(candidateStraights, valueToBeat);
   }
+
+
     /**
    * Handles the decision making for playing pair straights by finding the best pair straight to play
    * 
@@ -418,9 +423,8 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {Array<number>} - The best pair straight to play as 1D array, or empty array if none found
    */
   handlePairStraightsPlay(valueToBeat, straightSize) {
-      const allPossibleStraights = this.generateAllPossibleStraights(this.pairStraights, straightSize);
-      console.log(`This. PairStraights are `, this.pairStraights)
-      console.log(`All poss pair straights areL `, allPossibleStraights)
+    // Deprecated
+      const allPossibleStraights = this.generateSafePossibleStraights(this.pairStraights, straightSize);
       return this.findBestCandidate(allPossibleStraights, valueToBeat);
   }
 
@@ -433,7 +437,8 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {Array<number>} - The best triple straight to play as 1D array, or empty array if none found
    */
   handleTripleStraightsPlay(valueToBeat, straightSize) {
-      const allPossibleStraights = this.generateAllPossibleStraights(this.tripleStraights, straightSize);
+    // Deprecated
+      const allPossibleStraights = this.generateSafePossibleStraights(this.tripleStraights, straightSize);
       return this.findBestCandidate(allPossibleStraights, valueToBeat);
   }
 
@@ -447,7 +452,8 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {Array<number>} - The best quad straight to play as 1D array, or empty array if none found
    */
   handleQuadStraightsPlay(valueToBeat, straightSize) {
-      const allPossibleStraights = this.generateAllPossibleStraights(this.quadStraights, straightSize);
+    // Deprecated
+      const allPossibleStraights = this.generateSafePossibleStraights(this.quadStraights, straightSize);
       return this.findBestCandidate(allPossibleStraights, valueToBeat);
   }
 
@@ -483,36 +489,60 @@ export class DigEasyAIEngine extends DigAIEngine {
 //--------------- Helpers for Easy Logic for Handling All 8 Types --------------------------
 //---------------                     BEGINS                      --------------------------
 
-  /**
+  getStraightsThatBeats (straights, valueToBeat) {
+    const straightsThatBeats = straights.filter(straight => 
+        straight && straight.length >= 3 && 
+        straight[straight.length - 1] > valueToBeat
+    );
+    console.log("(getStraightsThatBeats()) Value to beat: ", valueToBeat);
+    console.log('(getStraightsThatBeats()) Straights That Beats ready to be processed: ', straightsThatBeats);
+    return straightsThatBeats;
+  }  
+
+/**
    * Generates all possible straight sub-combinations from a given straight
    * Minimum straight length is 3, so generates all contiguous subsequences of length 3 or more
+   * That also don't break this straight
    * 
    * @param {Array<number>} straight - A single straight array (e.g., [4,5,6,7])
    * @returns {Array<Array<number>>} - All possible sub-straights of length 3+
    * @param {number} straightSize - Straight size to follow
-   * 
-   * @example
-   * // For straight [4,5,6,7]
-   * generateSubStraights([4,5,6,7]) // Returns [[4,5,6], [5,6,7], [4,5,6,7]]
    */
-  generateSubStraights(straight, straightSize) {
-      console.log('generateSubStraights is called.........');
-      if (straightSize === 0) {
+  generateSafeSubStraights(straight, straightSize) {
+      console.log('generateSafeSubStraights is called......Takes: ', straight, ' and size: ', straightSize);
+
+      if (straightSize < 3) {
         throw new Error('Hey you want straights but it\'t not the stage to require 0 size straigt. I\'m in generateSubStraights() BTW');
       }
-      if (straightSize === straight.length) {
-        console.log('generateSubStraights is called.........', straight.slice());
-        return straight.slice();
+          
+      //Case of can't generate straights larger then itself.
+      if (straight.length < straightSize) {
+        console.log('Can\'t generate straights larger then itself. Returning nothing.');
+        return [[]];
+      }
+
+      // Case of garenteed break
+      if (straight.length < straightSize * 2) {
+        console.log('Straight to small to have sub straights. Returning itself.');
+        return [[]];
       }
 
       const subStraights = [];
       // Generate all contiguous subsequences of length 3 or more
       for (let start = 0; start <= straight.length - straightSize; start++) {
-          const subStraight = straight.slice(start, start + straightSize);
-          subStraights.push(subStraight);
-          console.log(`I got this subStraight: ${subStraight}`);
+          if (start === 0 || start === straight.length - straightSize) {              
+            const subStraight = straight.slice(start, start + straightSize);
+            subStraights.push(subStraight);
+            console.log(`I got this subStraight: ${subStraight}`);
+          
+          } else if (start >= straightSize && start <= straight.length - straightSize * 2) {              
+            const subStraight = straight.slice(start, start + straightSize);
+            subStraights.push(subStraight);
+            console.log(`I got this subStraight: ${subStraight}`);          
+
+          }
       }
-      console.log('505', subStraights);
+      console.log('generateSubStraights outputs: ', subStraights);
       return subStraights;
   }
 
@@ -527,13 +557,13 @@ export class DigEasyAIEngine extends DigAIEngine {
    * // For straights [[4,5,6,7], [9,10,11,12]]
    * // Returns [[4,5,6], [5,6,7], [4,5,6,7], [9,10,11], [10,11,12], [9,10,11,12]]
    */
-  generateAllPossibleStraights(straights, straightSize) {
+  generateSafePossibleStraights(straights, straightSize) {
       const allPossibleStraights = [];
       
       for (let straight of straights) {
           if (!straight || straight.length < 3) continue;
           
-          const subStraights = this.generateSubStraights(straight, straightSize);
+          const subStraights = this.generateSafeSubStraights(straight, straightSize);
           allPossibleStraights.push(...subStraights);
       }
       return allPossibleStraights;
@@ -577,30 +607,30 @@ export class DigEasyAIEngine extends DigAIEngine {
           throw new Error(`Invalid find straight safe request. ${straight.length}, ${mustMaintainSize}`);
       }
 
-      if (straight.length === mustMaintainSize || straight.length < mustMaintainSize) {
-        console.log('All break straight.');
-        return values;
+      if (straight.length <= mustMaintainSize) {
+        console.log('This straight ', straight, ' is too short to be safe from anything.');
+        return values.filter(value => straight.includes(value));
       }
 
       const breakerValues = [];
 
-      for (let value of values) {
+      for (let i = 0; i < values.length - 1; i++) {
           if (!straight) continue;
-          
+          if (values[i] < straight[0]) continue;
           // Big straight, push
           if (straight.length >= (mustMaintainSize * 2) + 1) {
             // Exclude non-breakers in the middle
-            if (value < straight[mustMaintainSize] || straight[straight.length - mustMaintainSize - 1] < value) {
+            if (values[i] < straight[mustMaintainSize] || straight[straight.length - mustMaintainSize - 1] < values[i]) {
               // Exclude head and tail
-              if (value !== straight[0] & value !== straight[straight.length - 1]) {
+              if (values[i] !== straight[0] & values[i] !== straight[straight.length - 1]) {
                   // Push the rest
-                  breakerValues.push(value);
+                  breakerValues.push(values[i]);
               }
             }
 
           } else { //Small straight, only head or tail are not breaker, push the rest.
-            if (value !== straight[0] & value !== straight[straight.length - 1]) {
-                breakerValues.push(value);
+            if (values[i] !== straight[0] & values[i] !== straight[straight.length - 1]) {
+                breakerValues.push(values[i]);
             }
           }
       }
@@ -680,36 +710,29 @@ export class DigEasyAIEngine extends DigAIEngine {
       console.log('Looking for best candidate in ', candidates, ' to beat ', valueToBeat);
       // Return empty array if no candidates provided
       if (!candidates || candidates.length === 0) {
+          console.log('findBestCandidate(), and I got nothing! So best candidate is nothing.');
           return [];
       }
-      
+
+      // Just to be sure, sort candidates by value ascending
+      candidates.sort((a, b) => a[a.length - 1] - b[b.length - 1]);
+
       let bestCombination = [];
-      let smallestWinningValue = 0;
-      
       // Iterate through each candidate combination
+      // Find first one that beats, which will be the smallest because candidates sorted.
       for (let i = 0; i < candidates.length; i++) {
           const combination = candidates[i];
-          
-          // Skip empty combinations
-          if (!combination || combination.length === 0) {
-              continue;
-          }
-          
-          // Get the value of this combination (last card since inner arrays are sorted)
-          const combinationValue = combination[combination.length - 1];
-          
+
           // Check if this combination can beat the target value
-          if (combinationValue > valueToBeat) {
-              // If this is the smallest winning value found so far, update our best choice
-              if (combinationValue < smallestWinningValue) {
-                  smallestWinningValue = combinationValue;
-                  bestCombination = combination;
-              }
+          if (combination[combination.length - 1] > valueToBeat) {
+              console.log('Got a smallest winning value: ', combination[combination.length - 1]);
+              bestCombination = combination;
+              break;
           }
       }
       console.log('Best candidate is ', bestCombination);
       // Return the best combination found, or empty array if none can win
-      return bestCombination ? [...bestCombination] : [];
+      return bestCombination;
   }
 //--------------- Helpers for Easy Logic for Handling All 8 Types --------------------------
 //---------------                     ENDS                      --------------------------
@@ -746,7 +769,18 @@ export class DigEasyAIEngine extends DigAIEngine {
    * // Since 2 > 1.25, conflicts are removed: group becomes [4,6,8]
    * // After regrouping: [] (no consecutive groups of 3+)
    */
-  turnMaxCombsSafe() {
+  turnMaxCombsSafe() {        
+      console.log('------  Player\'s combs before SAFE ------- ');
+      console.log(this.singles);
+      console.log(this.pairs);
+      console.log(this.triples);
+      console.log(this.quads);
+      console.log(this.straights);
+      console.log(this.pairStraights);
+      console.log(this.tripleStraights);
+      console.log(this.quadStraights);
+      console.log('\n');
+
       const singleValues = this.flattenCombinations(this.singles);
       const pairValues = this.flattenCombinations(this.pairs);
       const tripleValues = this.flattenCombinations(this.triples);
@@ -755,6 +789,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       const pairStraightValues = this.flattenCombinations(this.pairStraights);
       const tripleStraightValues = this.flattenCombinations(this.tripleStraights);
       const quadStraightValues = this.flattenCombinations(this.quadStraights);
+
 
       const overlappingSingles = singleValues.filter(value => straightValues.includes(value));
       const overlappingPairs = pairValues.filter(value => straightValues.includes(value));
@@ -782,7 +817,7 @@ export class DigEasyAIEngine extends DigAIEngine {
           breakerPairs.push(...this.findStraightBreakers(group, overlappingPairs, 3));
           breakerTriples.push(...this.findStraightBreakers(group, overlappingTriples, 3));
           breakerQuads.push(...this.findStraightBreakers(group, overlappingQuads, 3));
-
+          
           // Now let's update this group
           // Rule a little different so separate.
           // Find overlapping numbers in this group
@@ -845,6 +880,7 @@ export class DigEasyAIEngine extends DigAIEngine {
           safeTriples.push(breaker);
         }
       }
+
 
       safeSingles.sort((a, b) => a - b);
       safePairs.sort((a, b) => a - b);
