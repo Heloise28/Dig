@@ -120,7 +120,7 @@ export class Card {
       throw new Error('Card value must be a number between -1000 and 1000');
     }
     this.value = newValue;
-    console.log(`🔢 Card ${this.toShortString()} value set to ${this.value}`);
+    //console.log(`🔢 Card ${this.toShortString()} value set to ${this.value}`);
     return this;
   }
 

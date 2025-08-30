@@ -22,15 +22,12 @@ const noob = new AIDigPlayer('Noob', 1, 1, Personality.NOOB_BOT);
 
 noob.addCards([
   new Card("4", Suit.CLUBS, true),
+  new Card("4", Suit.HEARTS, true),
   new Card("5", Suit.CLUBS, true),
   new Card("6", Suit.CLUBS, true),
-  new Card("7", Suit.HEARTS, true),
   new Card("8", Suit.HEARTS, true),
   new Card("9", Suit.CLUBS, true),
   new Card("10", Suit.CLUBS, true),
-  new Card("J", Suit.CLUBS, true),
-  new Card("Q", Suit.CLUBS, true),
-  new Card("K", Suit.CLUBS, true),
 ]);
 
 
@@ -46,16 +43,16 @@ console.log(noob.toString());
 let noobPlayed;
 
 const state = new DigRoundState();
-state.setType(CombType.STRAIGHT);
-state.setValue(6);
-state.setStraightSize(3);
-state.setIsFirstRound(false);
-state.setIsOpenRound(false);
+state.setType(CombType.NONE);
+state.setValue(3);
+state.setStraightSize(0);
+state.setIsFirstRound(true);
 
 
 //----------- Later you find a good placec to update hand!! --------
 noob.updateHandAnalysis(); 
 
+/*
 console.log('\n------Noob fully updated combs: -------');
 console.log(noob.AIEngine.singles);
 console.log(noob.AIEngine.pairs);
@@ -66,7 +63,7 @@ console.log(noob.AIEngine.pairStraights);
 console.log(noob.AIEngine.tripleStraights);
 console.log(noob.AIEngine.quadStraights);
 console.log('----------------\n');
-
+*/
 
 let i = 0;
 while (noob.getHandSize() > 0 && i < 1) {
@@ -82,12 +79,10 @@ while (noob.getHandSize() > 0 && i < 1) {
       state.setType(selectedComb.getType());
       state.setValue(selectedComb.getValue());
       state.setStraightSize(selectedComb.getStraightSize());
-      state.setIsOpenRound(false);
       //update what noob player played in this turn
       noobPlayed = selectedComb;
+      console.log('\nNoob plays: ' + noobPlayed);
       noob.loseSelectedCards();
-      console.log('Noob plays: ' + noobPlayed);
-      console.log(noob.toString());
     } else {
       console.log('can\'t play this!');
     

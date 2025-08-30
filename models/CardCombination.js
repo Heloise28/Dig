@@ -185,6 +185,7 @@ export class CardCombination {
   }
 
   toShortString() {
+    if (this.cards.length === 0) return 'Empty Card Combination!';
     return `[${this.cards.map(card => card.toShortString()).join(', ')}]`;
   }
 

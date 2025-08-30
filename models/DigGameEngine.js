@@ -83,7 +83,7 @@ export class DigGameEngine {
     const cardValues = comb.getCards().map((c) => c.getValue());
 
     if (size === 0) {
-      console.log('No card selected! (from DigGameEngine)');
+      console.log('No card selected! (from DigGameEngine 86)');
       return;
     }
 
@@ -97,6 +97,7 @@ export class DigGameEngine {
       comb.setValueToLargestValue();
       console.log('Selected cards match a combination type! ' + comb);
 
+      // If ok to play, set comb's isValid to true using comb.verify(true);
       if (this.isCombOkToPlay(comb, typeOfTurn, valueToBeat, straightSizeOfTurn)) {
         comb.verify(true);
         return;
@@ -121,7 +122,7 @@ export class DigGameEngine {
    */
   static isCombOkToPlay(comb, typeOfTurn, valueToBeat, straightSizeOfTurn) {
     //if there's NO type to follow or a value to beat, OK to play.
-    console.log('Is this comb Ok to play? require: ' + typeOfTurn);
+    // console.log('Is this comb Ok to play? require: ' + typeOfTurn);
     if (typeOfTurn === CombType.NONE) {
       console.log('Open round! It\'s OK to play these cards!');
       return true;

@@ -31,14 +31,6 @@ export class DigAIEngine {
 
 
 
-
-
-
-
-
-
-
-
   /**
    * @TODO As you build child class of harder AI
    * You may want to move some helper/utility functions from DigEasyAI to here.
@@ -47,6 +39,20 @@ export class DigAIEngine {
    */
 
   
+  clearAvailableCombs() {
+    this.singles = [];
+    this.pairs = [];
+    this.triples = [];
+    this.quads = [];
+    this.straights = [];
+    this.pairStraights = [];
+    this.tripleStraights = [];
+    this.quadStraights = [];
+  }
+
+
+
+
   /**
    * Like this is an untility function, independent from AI level
    * translate an array of card values to a CardCombination
@@ -55,15 +61,15 @@ export class DigAIEngine {
    * @param: And many DigRoundStates Things
    * @return {CardCombination} translate to combination of actual cards in this AI player's hand
   */
-  findCombsToPlay(player, values, typeOfTurn, straightSizeOfTurn, isFirstRound, valueToBeat) {
+  findCombsToPlay(player, values, isFirstRound, valueToBeat) {
     if (values.length <= 0) {
-      console.log('You asked me to find comb of nothing.');
+      // console.log('You asked me to find comb of nothing.');
       return new CardCombination([]);
     }
-    console.log(`I go get these cards from your hand: ${values}`);
+    // console.log(`I go get these cards from your hand: ${values}`);
     //foundCards is an array<Card>
     const foundCards = player.getHand().getCardsByValue(values);
-    console.log('Hmm...So AI picked these cards: ' + foundCards);
+    // console.log('Hmm...So AI picked these cards: ' + foundCards);
 
     //if is first round, make sure there's a ♥ and just one above valueToBeat;
     if (isFirstRound) {
@@ -79,29 +85,34 @@ export class DigAIEngine {
 
       // If target ♥ doesn't exist, swap a card with the same value for it
       if (!hasTargetHeart) {
-        console.log('No...Gonna swap in a HEART.');
+        // console.log('No...Gonna swap in a HEART.');
         const foundTargetHeart = [];
         for (let i = 0; i < foundCards.length && !hasTargetHeart; i++) {
-          if (foundCards[i].getValue = valueToBeat + 1) {
-            console.log('Swap in a HEART...found target value!');
-            foundTargetHeart.push(player.getHand().getCards().filter((card) => 
-              card.getValue === valueToBeat + 1 && card.getSuit() === Suit.HEARTS));
+          if (foundCards[i].getValue() === valueToBeat + 1) {
+            // console.log('Swap in a HEART...found target value!');
+            const playerCards = player.getHand().getCards();  
+            foundTargetHeart.push(...playerCards.filter((card) => 
+              card.getValue() === valueToBeat + 1 && card.getSuit() === Suit.HEARTS));
           }
           if (foundTargetHeart.length > 0) {
-            console.log('Swap in a HEART...found target value AND HEART');
+            // console.log('Swap in a HEART...found target value AND HEART');
             foundCards[i] = foundTargetHeart[0];
             hasTargetHeart = true;
           }
         }
-        console.log('Break out of swap HEART. Did I found it? ' + hasTargetHeart);
+        if (!hasTargetHeart) {
+          throw new Error (`This first round openner don\'t have the ${valueToBeat + 1} of Heart!!`);
+        }
+        // console.log('Break out of swap HEART. Did I found it? ' + hasTargetHeart);
       }
     }
-
+    // console.log('Found Cards: ', foundCards);
     const combToPlay = new CardCombination(foundCards);
+
     // Get this comb ready so that may skip evaluating comb.
-    combToPlay.setType(typeOfTurn);
-    combToPlay.setValue(values[values.length - 1]);
-    combToPlay.setStraightSize(straightSizeOfTurn);
+    // combToPlay.setType(typeOfTurn);
+    // combToPlay.setValue(values[values.length - 1]);
+    // combToPlay.setStraightSize(straightSizeOfTurn);
 
     return combToPlay;
   }

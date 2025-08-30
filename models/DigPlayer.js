@@ -139,13 +139,16 @@ export class DigPlayer {
 
   loseSelectedCards() {
     this.hand.removeSelectedCards();
-    this.updateHandAnalysis();
+    console.log(`After remove ${this.name}'s situation is: ${this}`);
   }
 
   updateHandAnalysis() {      
     //update value counts first
     this.countOfEachValue = this.updateValueCounts();
-    
+
+    //clear all available combs
+    this.AIEngine.clearAvailableCombs();
+
     if (!this.isHuman) {
       if (this.level === 1) {
         this.AIEngine.updateSafeCombs(this);

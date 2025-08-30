@@ -24,15 +24,18 @@ export class DigEasyAIEngine extends DigAIEngine {
 
     const isFirstRound = state.getIsFirstRound();        
     const valueToBeat = state.getValue();
-    const isOpenRound = state.getIsOpenRound();
-    const straightSizeOfTurn = state.getStraightSize();
+    let straightSizeOfTurn = state.getStraightSize();
     const typeOfTurn = state.getType();
 
     //check roud state for testing
     if (CombType.isValid(typeOfTurn)) {
         if (typeOfTurn === CombType.NONE) {
-          if (straightSizeOfTurn !== 0 || valueToBeat !== 0) {
-            throw new Error('Open Round, straight size and value to beat must be 0');
+          if (straightSizeOfTurn !== 0) {
+            throw new Error('Open Round, straight size must be 0');
+          } else if (!isFirstRound && valueToBeat !== 0) {
+            throw new Error('Open Round but not first, value to beat must be 0');
+          } else if (isFirstRound && valueToBeat < 3) {
+            throw new Error('Open Round but is first, value to beat must not < 3');
           }
         } else if (typeOfTurn === CombType.STRAIGHT
            || typeOfTurn === CombType.PAIR_STRAIGHT
@@ -52,24 +55,29 @@ export class DigEasyAIEngine extends DigAIEngine {
       typeOfTurn,
       isFirstRound
     );
-    
-    console.log(`${player.name} decided to play `, playResult, ' but hasn\'t played them yet. (Message from getAIcombDecision(state))');
+    /*
+    if (typeOfTurn === CombType.STRAIGHT)
+      straightSizeOfTurn = playResult.length;
+    if (typeOfTurn === CombType.PAIR_STRAIGHT)
+      straightSizeOfTurn = playResult.length / 2;
+    if (typeOfTurn === CombType.TRIPLE_STRAIGHT)
+      straightSizeOfTurn = playResult.length / 3;
+    if (typeOfTurn === CombType.QUAD_STRAIGHT)
+      straightSizeOfTurn = playResult.length / 4;
+    */
+    // console.log(`${player.name} decided to play `, playResult, ' but hasn\'t played them yet. (Message from getAIcombDecision(state))');
 
     // First round (find heart) also handled here.
     const combToPlay = this.findCombsToPlay(
       player, 
-      playResult, 
-      typeOfTurn, 
-      straightSizeOfTurn, 
+      playResult,
       isFirstRound, 
       valueToBeat
     );
-
-    console.log('\nDid I handle combs with repeats? Comb to Playis :  ', combToPlay.toShortString(), '\n');
-
+    // console.log('\nDid I handle combs with repeats? Comb to Playis :  ', combToPlay.toShortString(), '\n');
     combToPlay.selectComb(); 
 
-    console.log(`And the picked comb looks like ${combToPlay.getSize() > 0 ? combToPlay.toShortString() : 'nothing'}.`);
+    // console.log(`And the picked comb looks like ${combToPlay.getSize() > 0 ? combToPlay.toShortString() : 'nothing'}.`);
 
     return combToPlay;
   }
@@ -200,7 +208,6 @@ export class DigEasyAIEngine extends DigAIEngine {
               const allCombValues = this.flattenCombinations(typeData.combinations);                           
               return allCombValues.includes(targetValue);
           });
-          
           // Only use first round filtering if we found candidates
           if (firstRoundCandidates.length > 0) {
               candidateTypes = firstRoundCandidates;
@@ -328,7 +335,6 @@ export class DigEasyAIEngine extends DigAIEngine {
    */
   handleTriplesPlay(valueToBeat) {
 
-      console.log('GAGU', valueToBeat);
       const candidates = this.triples;
 
       let safeQuads = [];
@@ -407,7 +413,7 @@ export class DigEasyAIEngine extends DigAIEngine {
     const straightsThatBeats = this.getStraightsThatBeats (straights, valueToBeat);
 
     const candidateStraights = this.generateSafePossibleStraights(straightsThatBeats, straightSizeOfTurn);
-    
+    // console.log('handle Repeat StraightsPlay Candidates:  ', candidateStraights);
     // Find the best candidate from all valid straight sections
     return this.findBestCandidate(candidateStraights, valueToBeat);
   }
@@ -494,8 +500,8 @@ export class DigEasyAIEngine extends DigAIEngine {
         straight && straight.length >= 3 && 
         straight[straight.length - 1] > valueToBeat
     );
-    console.log("(getStraightsThatBeats()) Value to beat: ", valueToBeat);
-    console.log('(getStraightsThatBeats()) Straights That Beats ready to be processed: ', straightsThatBeats);
+    // console.log("(getStraightsThatBeats()) Value to beat: ", valueToBeat);
+    // console.log('(getStraightsThatBeats()) Straights That Beats ready to be processed: ', straightsThatBeats);
     return straightsThatBeats;
   }  
 
@@ -509,7 +515,7 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @param {number} straightSize - Straight size to follow
    */
   generateSafeSubStraights(straight, straightSize) {
-      console.log('generateSafeSubStraights is called......Takes: ', straight, ' and size: ', straightSize);
+      // console.log('generateSafeSubStraights is called......Takes: ', straight, ' and size: ', straightSize);
 
       if (straightSize < 3) {
         throw new Error('Hey you want straights but it\'t not the stage to require 0 size straigt. I\'m in generateSubStraights() BTW');
@@ -517,14 +523,17 @@ export class DigEasyAIEngine extends DigAIEngine {
           
       //Case of can't generate straights larger then itself.
       if (straight.length < straightSize) {
-        console.log('Can\'t generate straights larger then itself. Returning nothing.');
+        // console.log('Can\'t generate straights larger than itself. Returning nothing.');
         return [[]];
       }
 
-      // Case of garenteed break
+      if (straight.length === straightSize) {
+          // console.log('Straight too small to have sub straights, and size do match, Returning itself.');
+          return [straight];
+      }
       if (straight.length < straightSize * 2) {
-        console.log('Straight to small to have sub straights. Returning itself.');
-        return [[]];
+          // console.log('Straight too small to have sub straights while not breaking, returning [[]].');
+          return [[]];      
       }
 
       const subStraights = [];
@@ -533,16 +542,16 @@ export class DigEasyAIEngine extends DigAIEngine {
           if (start === 0 || start === straight.length - straightSize) {              
             const subStraight = straight.slice(start, start + straightSize);
             subStraights.push(subStraight);
-            console.log(`I got this subStraight: ${subStraight}`);
+            // console.log(`I got this subStraight: ${subStraight}`);
           
           } else if (start >= straightSize && start <= straight.length - straightSize * 2) {              
             const subStraight = straight.slice(start, start + straightSize);
             subStraights.push(subStraight);
-            console.log(`I got this subStraight: ${subStraight}`);          
+            // console.log(`I got this subStraight: ${subStraight}`);          
 
           }
       }
-      console.log('generateSubStraights outputs: ', subStraights);
+      // console.log('generateSubStraights outputs: ', subStraights);
       return subStraights;
   }
 
@@ -559,10 +568,9 @@ export class DigEasyAIEngine extends DigAIEngine {
    */
   generateSafePossibleStraights(straights, straightSize) {
       const allPossibleStraights = [];
-      
       for (let straight of straights) {
           if (!straight || straight.length < 3) continue;
-          
+                // console.log('Pushing these substraights to safe poss straights', straight);
           const subStraights = this.generateSafeSubStraights(straight, straightSize);
           allPossibleStraights.push(...subStraights);
       }
@@ -602,13 +610,13 @@ export class DigEasyAIEngine extends DigAIEngine {
    * @returns {Array<number>} - Values that would break straights if removed
    */
   findStraightBreakers(straight, values, mustMaintainSize) {   
-    console.log(`Let's see if ${values} breaks ${straight}`);
+    // console.log(`Let's see if ${values} breaks ${straight}`);
       if (mustMaintainSize < 3 || straight.length < 3) {
           throw new Error(`Invalid find straight safe request. ${straight.length}, ${mustMaintainSize}`);
       }
 
       if (straight.length <= mustMaintainSize) {
-        console.log('This straight ', straight, ' is too short to be safe from anything.');
+        // console.log('This straight ', straight, ' is too short to be safe from anything.');
         return values.filter(value => straight.includes(value));
       }
 
@@ -634,7 +642,7 @@ export class DigEasyAIEngine extends DigAIEngine {
             }
           }
       }
-      console.log(`${breakerValues.length > 0 ? straight + " would be broken by " + breakerValues : values + " do not break " + straight}`);
+      // console.log(`${breakerValues.length > 0 ? straight + " would be broken by " + breakerValues : values + " do not break " + straight}`);
       return breakerValues;
   }
     /**
@@ -707,7 +715,7 @@ export class DigEasyAIEngine extends DigAIEngine {
    * findBestCandidate([[3,4,5], [7,8,9]], 6) // Returns [7,8,9]
    */
   findBestCandidate(candidates, valueToBeat) {
-      console.log('Looking for best candidate in ', candidates, ' to beat ', valueToBeat);
+      // console.log('Looking for best candidate in ', candidates, ' to beat ', valueToBeat);
       // Return empty array if no candidates provided
       if (!candidates || candidates.length === 0) {
           console.log('findBestCandidate(), and I got nothing! So best candidate is nothing.');
@@ -725,7 +733,7 @@ export class DigEasyAIEngine extends DigAIEngine {
 
           // Check if this combination can beat the target value
           if (combination[combination.length - 1] > valueToBeat) {
-              console.log('Got a smallest winning value: ', combination[combination.length - 1]);
+              // console.log('Got a smallest winning value: ', combination[combination.length - 1]);
               bestCombination = combination;
               break;
           }
@@ -750,7 +758,7 @@ export class DigEasyAIEngine extends DigAIEngine {
     const countOfEachValue = player.getCountOfEachValue();
     this.updateAvailableMaxCombs(countOfEachValue);
     this.turnMaxCombsSafe();
-    this.printAvailableCombs(player);
+    // this.printAvailableCombs(player);
   }
 
 
@@ -769,7 +777,8 @@ export class DigEasyAIEngine extends DigAIEngine {
    * // Since 2 > 1.25, conflicts are removed: group becomes [4,6,8]
    * // After regrouping: [] (no consecutive groups of 3+)
    */
-  turnMaxCombsSafe() {        
+  turnMaxCombsSafe() {
+    /*  
       console.log('------  Player\'s combs before SAFE ------- ');
       console.log(this.singles);
       console.log(this.pairs);
@@ -780,6 +789,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       console.log(this.tripleStraights);
       console.log(this.quadStraights);
       console.log('\n');
+      */
 
       const singleValues = this.flattenCombinations(this.singles);
       const pairValues = this.flattenCombinations(this.pairs);
@@ -812,7 +822,7 @@ export class DigEasyAIEngine extends DigAIEngine {
           if (!group || group.length < 3) continue;
           
           // Add to breakerSingles;
-          console.log(`Now group is: ${group}`);
+          // console.log(`Now group is: ${group}`);
           breakerSingles.push(...this.findStraightBreakers(group, overlappingSingles, 4));
           breakerPairs.push(...this.findStraightBreakers(group, overlappingPairs, 3));
           breakerTriples.push(...this.findStraightBreakers(group, overlappingTriples, 3));
@@ -928,7 +938,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       
       // Don't forget the last group
       groups.push(currentGroup);
-      console.log("Pure groups just made and ready to go (has less than 3s) ", groups);
+      // console.log("Pure groups just made and ready to go (has less than 3s) ", groups);
       
       // Filter out groups with less than 3 elements (minimum straight size)
       return groups.filter(group => group.length >= 3);
@@ -971,6 +981,7 @@ export class DigEasyAIEngine extends DigAIEngine {
         } else if (count >= 2) {
             this.pairs.push([value]);
         } else {
+          // console.log(`pushing ${value} to singles.....`)
             this.singles.push([value]);
         }
     });

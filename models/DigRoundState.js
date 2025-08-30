@@ -6,7 +6,6 @@ export class DigRoundState {
     this.value = 0;
     this.suit = Suit.NONE;
     this.isFirstRound = false;
-    this.isOpenRound = true;
 
     this.straightSize = 0;
 
@@ -28,10 +27,6 @@ export class DigRoundState {
     return this.isFirstRound;
   }
   
-  getIsOpenRound() {
-    return this.isOpenRound;
-  }
-
   setType(newType) {
     this.type = newType;
     return;
@@ -50,10 +45,6 @@ export class DigRoundState {
   setIsFirstRound(newBoolean) {
     this.isFirstRound = newBoolean;
     return;
-  }
-
-  setIsOpenRound(newBoolean) {
-    this.isOpenRound = newBoolean;
   }
 
   

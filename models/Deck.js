@@ -19,7 +19,7 @@ export class Deck {
       reorganize: null
     };
     
-    console.log('🎴 Deck created');
+    // console.log('🎴 Deck created');
   }
 
   /**
