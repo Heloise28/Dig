@@ -8,6 +8,7 @@
     "test": "node test/test.js",
     "EasyAITest": "node test/EasyAITest.js",
     "3EasyAITest": "node test/3EasyAITest.js",
+    "2EasyAI1HumenTest": "node test/2EasyAI1HumenTest.js",
     "FunctionTest": "node test/FunctionTest.js",
     "dev": "echo 'Development server setup will be added later'",
     "build": "echo 'Build process will be added later'",

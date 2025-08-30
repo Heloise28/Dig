@@ -185,8 +185,7 @@ while (john.getHandSize() > 0) {
       console.log('can\'t play this!');
     
     }
-    selectedComb.deselectComb();    
-  
+    selectedComb.deselectComb();      
   }
 
 }

@@ -1,5 +1,6 @@
 import { DigPlayer } from './DigPlayer.js';
 import { CardCombination } from './CardCombination.js';
+import { DigEasyAIEngine } from './DigEasyAIEngine.js';
 import readline from 'readline';
 
 /**
@@ -13,6 +14,9 @@ import readline from 'readline';
 export class HumanDigPlayer extends DigPlayer {
   constructor(name, seatNumber) {
     super(name, true, seatNumber);
+
+    // But will be smarter later
+    this.AIEngine = new DigEasyAIEngine();
   } 
 
   /**

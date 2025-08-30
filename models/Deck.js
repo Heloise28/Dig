@@ -166,7 +166,7 @@ export class Deck {
       }
     }
     
-    console.log(`🎴 Removed ${selectedCards.length} selected card(s): ${selectedCards.map(card => card.toShortString()).join(', ')}`);
+    // console.log(`🎴 Removed ${selectedCards.length} selected card(s): ${selectedCards.map(card => card.toShortString()).join(', ')}`);
   }
 
   /**

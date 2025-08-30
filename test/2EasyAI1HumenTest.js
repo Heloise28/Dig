@@ -17,20 +17,20 @@ digDeck.shuffle();
 DigGameEngine.raiseBigCardsValue(digDeck);
 console.log('Dig deck created:', digDeck.toString());
 
-const noob1 = new AIDigPlayer('Noob One', 1, 1, Personality.NOOB_BOT);
-const noob2 = new AIDigPlayer('Noob Two', 2, 1, Personality.NOOB_BOT);
-const noob3 = new AIDigPlayer('Noob Three', 3, 1, Personality.NOOB_BOT);
+const noob1 = new AIDigPlayer('Noobie', 1, 1, Personality.NOOB_BOT);
+const noob2 = new AIDigPlayer('Nooblonie', 2, 1, Personality.NOOB_BOT);
+const john = new HumanDigPlayer('John', 3, 1, Personality.NOOB_BOT);
 
 noob1.addCards(digDeck.dealTopCards(17));
 noob2.addCards(digDeck.dealTopCards(17));
-noob3.addCards(digDeck.dealTopCards(18));
+john.addCards(digDeck.dealTopCards(18));
 
 
 // DigGameEngine.raiseBigCardsValue(noob.getHand());//Don't forget to raise A,2,3 value.
 
 noob1.sortHandAscByValue();
 noob2.sortHandAscByValue();
-noob3.sortHandAscByValue();
+john.sortHandAscByValue();
 
 /**
  * @TODO replace with 2D array of all cards played in this game.
@@ -47,7 +47,7 @@ state.setIsFirstRound(true);
 //----------- Later you find a good placec to update hand!! --------
 noob1.updateHandAnalysis(); 
 noob2.updateHandAnalysis(); 
-noob3.updateHandAnalysis(); 
+john.updateHandAnalysis(); 
 
 console.log(noob1.toString());
 noob1.AIEngine.printAvailableCombs(noob1);
@@ -55,13 +55,12 @@ noob1.AIEngine.printAvailableCombs(noob1);
 console.log(noob2.toString());
 noob2.AIEngine.printAvailableCombs(noob2);
 
-console.log(noob3.toString());
-noob3.AIEngine.printAvailableCombs(noob3);
+console.log(john.toString());
+john.AIEngine.printAvailableCombs(john);
 
-const players = [noob1, noob2, noob3];
-let playerPlayed;
+const players = [noob1, noob2, john];
 
-console.log('\n------------  3 Noobs Begin!! ------------');
+console.log('\n------------  You versus 2 noobs BEGIN! ------------');
 
 // These 3 are trackers for winner of round
 // Winner gets to reset type
@@ -75,19 +74,23 @@ if (hasThatHeart(noob1, heartValue)) {
   i = 0;
 } else if (hasThatHeart(noob2, heartValue)) {
   i = 1;
-} else if (hasThatHeart(noob3, heartValue)) {
+} else if (hasThatHeart(john, heartValue)) {
   i = 2;
 } else {
   throw new Error(`What? No player has required heart?`);
 }
-console.log('Set player to player ', i);
+console.log('Set first player to player index', i);
 
 //players start to take turns.
 while (i < 3) {
   let player = players[i];
   // console.log('Round begins ======== ', isOpenRound, lastPlayedValue, passesCount);
 
-  AIPlayerGO(player, state);
+  if (!player.getIsHuman()) {
+    AIPlayerGO(player, state);
+  } else {
+    await humanPlayerGO(player, state);
+  }
 
   // If this player clears hand, game ends
   if (player.getHandSize() === 0) {
@@ -122,7 +125,7 @@ while (i < 3) {
   // If this player still has card, move i to next player.
   i++;
   if (i === 3) i = 0;
-  console.log('\nRound ends. Next player is ', i);
+  console.log('\nRound ends. Next player index is ', i);
 }
 
 console.log('game ends');
@@ -155,7 +158,7 @@ function AIPlayerGO(player, state) {
   // Handle if no card selected 
   if (selectedComb.getSize() === 0) {
     if (state.getType() === CombType.NONE) {
-      throw new Error('AI passes in a when it\s supposed to open!');
+      throw new Error('AI passes when it\s supposed to open!');
     } else {
       console.log(`No cards selected. ${player.getName()} chose to pass. (I\'m in AIPlayerGO)`)
       return;
@@ -181,5 +184,43 @@ function AIPlayerGO(player, state) {
   
   }
   selectedComb.deselectComb();    
+}
 
+async function humanPlayerGO (player, state) {
+  console.log(`\n${state.getType()} ${state.getValue()} ${state.getIsFirstRound()}`);
+  console.log(player.toString());
+  let haveToPlay = true;
+  while (haveToPlay) {
+    let selectedComb = await player.getCombOfSelectedCards();
+    
+    // Handle if no card selected 
+    if (selectedComb.getSize() === 0) {
+      if (state.getType() === CombType.NONE) {
+        throw new Error(`${player.getName()} passes when it\s supposed to open!`);
+      } else {
+        console.log(`No cards selected. ${player.getName()} chose to pass. (I\'m in AIPlayerGO)`)
+        return;
+      }
+    
+    } else {
+      DigGameEngine.evaluateCardCombination(selectedComb, state)
+      if (selectedComb.isValidCombination()) {
+        haveToPlay = false;
+        //update what player played in this turn
+        state.setType(selectedComb.getType());
+        state.setValue(selectedComb.getValue());
+        state.setStraightSize(selectedComb.getStraightSize());      
+        if (state.getIsFirstRound()) state.setIsFirstRound(false);
+
+        console.log(`\n${player.getName()} plays: ${selectedComb}`);
+        player.loseSelectedCards();
+
+      } else {
+        console.log('can\'t play this!');
+      
+      }
+      selectedComb.deselectComb();      
+    }
+  }
+  return;
 }
