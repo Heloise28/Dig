@@ -6,8 +6,8 @@ import readline from 'readline';
 /**
  * @todo To enable AI suggestions for human players, 
  * here I will later put a function that can create
- * an AI Engine class depend on how strong you want 
- * the AI enginie to be and help you to select cards.
+ * an AI Engine class , or simply this.AIEngine and set to MAX AI
+ * Suggestions are going to be the best
  * 
  */
 
@@ -17,13 +17,29 @@ export class HumanDigPlayer extends DigPlayer {
 
     // But will be smarter later
     this.AIEngine = new DigEasyAIEngine();
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
   } 
 
-  /**
-   * @TODO
-   */
-  //playerBid is a global to each player in Game Class
-  bid(playerBid) {
+/**
+ * @param {Number} currentBid
+ * @return {Number}
+ */
+  async bidFromConsole(currentBid) {
+
+    let bid = 0;
+    while (true) {
+      bid = await this.askQuestion(`Current pit is ${currentBid}. How much do you dig?: `);
+      bid = Number(bid);
+      if (isNaN(bid)) console.log('You must dig a number.');
+      if (bid === 0) break;
+      if ((bid === 1 || bid === 2 || bid === 3) && bid > currentBid) break;
+      console.log(`You need to dig deeper!`);
+    }
+
+    return bid;
   }
   
 
@@ -41,13 +57,8 @@ export class HumanDigPlayer extends DigPlayer {
 
 
   async selectCardsFromConsole() {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
-
     while (true) {
-      const notation = await this.askQuestion('Enter card notation (or "quit" to exit): ', rl);
+      const notation = await this.askQuestion('Enter card notation (or "quit" to exit): ');
       
       if (notation.toLowerCase() === 'q') {
         break;
@@ -55,21 +66,21 @@ export class HumanDigPlayer extends DigPlayer {
       
       this.selectCardByNotation(notation);
     }
-
-    rl.close();
   }
 
-  //the following is the functions to select cards in console
-  //in order to test
-  //Requires this (seen on top): "import readline from 'readline';"
-  askQuestion(question, rl) {
+
+  askQuestion(question) {
     return new Promise((resolve) => {
-      rl.question(question, (answer) => {
+      this.rl.question(question, (answer) => {
         resolve(answer);
       });
     });
   }
 
+  closeReadLine() {
+    this.rl.close();
+    console.log(`I just closed readline`);
+  }
   //for testing in console
   selectCardByNotation(notation) {
     this.hand.selectCardByNotation(notation);

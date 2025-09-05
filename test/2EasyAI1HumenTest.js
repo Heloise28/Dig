@@ -62,26 +62,55 @@ const players = [noob1, noob2, john];
 
 console.log('\n------------  You versus 2 noobs BEGIN! ------------');
 
-// These 3 are trackers for winner of round
-// Winner gets to reset type
-let passesCount = 0;
-let lastPlayedValue = 0;
-let isOpenRound = true; // Start is open round
-
 const heartValue = state.getValue() + 1; 
-let i = 1000;
+
 if (hasThatHeart(noob1, heartValue)) {
-  i = 0;
+  startPlayerIndex = 0;
 } else if (hasThatHeart(noob2, heartValue)) {
-  i = 1;
+  startPlayerIndex = 1;
 } else if (hasThatHeart(john, heartValue)) {
-  i = 2;
+  startPlayerIndex = 2;
 } else {
   throw new Error(`What? No player has required heart?`);
 }
-console.log('Set first player to player index', i);
+console.log('Set first player to player index', startPlayerIndex);
 
-//players start to take turns.
+/*
+// Start bidding
+let bid = 0;
+let lastBid = 0;
+let passesCount = 0;
+let i = startPlayerIndex;
+while (i < 3) {
+  let player = players[i];
+  let lastBid = bid;
+
+  if (!player.getIsHuman()) {
+    AIPlayerBid(player, bid);
+  } else {
+    await humanPlayerBid(player, bid);
+  }
+
+  if (bid === lastBid) {
+    passesCount++;
+  } else {
+    passesCount = 0;
+  }
+
+
+}
+*/
+
+
+
+// These 3 are trackers for winner of round
+// Winner gets to reset type
+passesCount = 0;
+let lastPlayedValue = 0;
+let isOpenRound = true; // Start is open round
+
+//players start to take turns and play.
+i = startPlayerIndex;
 while (i < 3) {
   let player = players[i];
   // console.log('Round begins ======== ', isOpenRound, lastPlayedValue, passesCount);
@@ -125,7 +154,7 @@ while (i < 3) {
   // If this player still has card, move i to next player.
   i++;
   if (i === 3) i = 0;
-  console.log('\nRound ends. Next player index is ', i);
+  console.log('\nNext player index is ', i);
 }
 
 console.log('game ends');
@@ -187,7 +216,7 @@ function AIPlayerGO(player, state) {
 }
 
 async function humanPlayerGO (player, state) {
-  console.log(`\n${state.getType()} ${state.getValue()} ${state.getIsFirstRound()}`);
+  console.log(`\n${state.getType()} ${state.getValue()} (First Round? -> ${state.getIsFirstRound()}`);
   console.log(player.toString());
   let haveToPlay = true;
   while (haveToPlay) {

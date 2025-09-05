@@ -14,6 +14,35 @@ export class DigEasyAIEngine extends DigAIEngine {
 
 
 
+
+
+
+  /**
+   * Really simple get bid solution
+   * @override
+   * @param { DigPlayer } player
+   * @return { Number }
+   */
+  getAIBidDecision(player) {
+    const countOfEachValue = player.getCountOfEachValue();
+    let aceCounts = countOfEachValue.has(14) ? countOfEachValue.get(14) : 0;
+    let twoCounts = countOfEachValue.has(15) ? countOfEachValue.get(15) : 0;
+    let threeCounts = countOfEachValue.has(16) ? countOfEachValue.get(16) : 0;
+    let total = aceCounts + twoCounts + threeCounts;
+
+    if (total >= 6) return 3;
+    if (total >= 5) return 2;
+    if (total >= 4) return 1;
+    
+    return 0;
+  }
+
+
+
+
+
+
+
 /**
  * @override
  * @param { CardCombination} availableCombinations
@@ -95,7 +124,7 @@ export class DigEasyAIEngine extends DigAIEngine {
   getPlayFromHandler(straightSizeOfTurn, valueToBeat, typeOfTurn, isFirstRound) {
         // Play decision based on typeOfTurn
     let playResult = [];
-    console.log('So type of turn is ' + typeOfTurn + '. Start handling.... (I\m in getPlayFromHandler() right before switch, which is inside getAIcombDecision(player, state))');
+    console.log('AI thinking...Combination is ' + typeOfTurn + '... ');
 
     switch (typeOfTurn) {
         case CombType.SINGLE:
@@ -229,7 +258,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       candidateTypes.forEach(typeData => {
           const count = typeData.combinations.length;
           combCounts.get(count).push(typeData.type);
-          console.log('Found ' + count + ' ' +  typeData.type + '(s) as candidate types!');
+          // console.log('Found ' + count + ' ' +  typeData.type + '(s) as candidate types!');
       });
       
       // Find the type with the most combinations (highest priority within that count)
@@ -242,6 +271,22 @@ export class DigEasyAIEngine extends DigAIEngine {
       // Fallback (should not reach here if there are any combinations)
       return CombType.SINGLE;
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -718,7 +763,7 @@ export class DigEasyAIEngine extends DigAIEngine {
       // console.log('Looking for best candidate in ', candidates, ' to beat ', valueToBeat);
       // Return empty array if no candidates provided
       if (!candidates || candidates.length === 0) {
-          console.log('findBestCandidate(), and I got nothing! So best candidate is nothing.');
+          //console.log('So best candidate is nothing.');
           return [];
       }
 
@@ -744,6 +789,18 @@ export class DigEasyAIEngine extends DigAIEngine {
   }
 //--------------- Helpers for Easy Logic for Handling All 8 Types --------------------------
 //---------------                     ENDS                      --------------------------
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -947,6 +1004,27 @@ export class DigEasyAIEngine extends DigAIEngine {
 //--------------- Update All Limitedly Conflicting Combinations --------------------------
 //---------------                     ENDS                    --------------------------
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   // -----------   Update Available **Max** Combinations   ----------

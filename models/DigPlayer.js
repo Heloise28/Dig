@@ -27,6 +27,7 @@ export class DigPlayer {
     this.isTurn = false;
     this.isHuman = isHuman;
     this.seatNumber = seatNumber;
+    this.score = 0;
     this.countOfEachValue = new Map();
   }
 
@@ -54,6 +55,10 @@ export class DigPlayer {
 
   getSeatNumber() {
     return this.seatNumber;
+  }
+
+  getScore() {
+    return this.score;
   }
 
   getCountOfEachValue() {
@@ -93,6 +98,27 @@ export class DigPlayer {
       throw new Error('Seat number must be a non-negative integer');
     }
     this.seatNumber = seatNumber;
+  }
+
+  setScore(score) {
+    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0) {
+      throw new Error('Diggest Score setter must get a non-negative integer');
+    }
+    this.score = score;
+  }
+
+  addScore(score) {
+    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0) {
+      throw new Error('Adding score... must get a non-negative integer');
+    }
+    this.score += score;
+  }
+
+  deductScore(score) {
+    if (typeof score !== 'number' || !Number.isInteger(score) || score < 0) {
+      throw new Error('Decudting score... must get a non-negative integer');
+    }
+    this.score -= score;
   }
 
   addCard(card) {
@@ -144,7 +170,7 @@ export class DigPlayer {
 
   updateHandAnalysis() {      
     //update value counts first
-    this.countOfEachValue = this.updateValueCounts();
+    this.updateValueCounts();
 
     //clear all available combs
     this.AIEngine.clearAvailableCombs();
@@ -156,14 +182,6 @@ export class DigPlayer {
     }
   }
 
-  //returns a boolean 
-  isPlayerTurn() {
-    return this.isTurn;
-  }
-
-  setPlayerTurn(isTurn) {
-    this.isTurn = isTurn;
-  }
 
   //Abstract method
   bid(playerBid) {
@@ -181,7 +199,7 @@ export class DigPlayer {
       const value = card.getValue();
       counts.set(value, (counts.get(value) || 0) + 1);
     }
-    return counts;
+    this.countOfEachValue = counts;
   } 
 
 

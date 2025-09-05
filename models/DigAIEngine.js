@@ -2,6 +2,7 @@
 import { CardCombination } from "./CardCombination.js";
 import { CombType, Suit } from "./enums.js";
 import { DigRoundState } from "./DigRoundState.js";
+import { DigPlayer } from "./DigPlayer.js";
 
 
 export class DigAIEngine {
@@ -29,6 +30,12 @@ export class DigAIEngine {
  */
   getAIcombDecision(player, state) {}
 
+  /**
+   * @abstract
+   * @param { DigPlayer } player
+   * @return { Number }
+   */
+  getAIBidDecision(player) {}
 
 
   /**
