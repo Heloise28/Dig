@@ -27,6 +27,7 @@ export class DigGameSession {
     this.playedCards = [[],[],[]];
 
     this.state = new DigRoundState();
+    this.gameContinue = true;
 
   }
 
@@ -37,18 +38,23 @@ export class DigGameSession {
 
   async runDigGameSession() {
     this.addAIPlayer('Noobie', 0, 1, Personality.NOOB_BOT);
-    this.addAIPlayer('Noobolobous', 1, 1, Personality.NOOB_BOT);
+    this.addAIPlayer('Noobolobus', 1, 1, Personality.NOOB_BOT);
     this.addHumanPlayer('John', 2);
 
-    await this.runDigGame();
+    while (this.gameContinue) {
+      await this.runDigGame();
+      this.isWinningScoreReached(6);
+    }
 
+    /**
+     * @todo Don't forget to get rid of this console version in GUI test.
+     */
     this.players[2].closeReadLine();
   }
 
 
 
   async runDigGame() {
-
     this.resetGame();
     await this.runBidding();
     await this.runPlaying();
@@ -67,14 +73,16 @@ export class DigGameSession {
 
     this.bid = 0;
     
+    this.pitDeck.addCards(this.deck.dealTopCards(4));
+
+    this.state.setValue(this.findHeartValue());
     this.state.setType(CombType.NONE);
-    this.state.setValue(3);
     this.state.setStraightSize(0);
     this.state.setIsFirstRound(true); 
     
-    this.players[0].addCards(this.deck.dealTopCards(17));
-    this.players[1].addCards(this.deck.dealTopCards(17));
-    this.players[2].addCards(this.deck.dealTopCards(18));
+    this.players[0].addCards(this.deck.dealTopCards(16));
+    this.players[1].addCards(this.deck.dealTopCards(16));
+    this.players[2].addCards(this.deck.dealTopCards(16));
 
     this.players[0].sortHandAscByValue();
     this.players[1].sortHandAscByValue();
@@ -140,6 +148,13 @@ export class DigGameSession {
       i++;
       if (i === 3) i = 0;
     }
+
+    this.players[this.bidderIndex].addCards(this.pitDeck.dealTopCards(4));
+    this.players[this.bidderIndex].sortHandAscByValue();
+    console.log(`Just checking, player 0 has ${this.players[0].getHandSize()} cards`);
+    console.log(`Just checking, player 1 has ${this.players[1].getHandSize()} cards`);
+    console.log(`Just checking, player 2 has ${this.players[2].getHandSize()} cards`);
+
     console.log(`Pit is ${this.bid}, digger is ${this.bidderIndex}. Let's play!`);
   }
 
@@ -236,7 +251,7 @@ export class DigGameSession {
         } else {
           this.players[i].deductScore(this.bid);
           console.log(`Player ${i} loses ${this.bid}! Now score is ${this.players[i].getScore()}`);                  
-        }
+        }  
       }
     
     } else {
@@ -252,6 +267,32 @@ export class DigGameSession {
     }
   }
 
+
+  isWinningScoreReached(winningScore) {
+    for (let i = 0; i < 3; i++) {
+      const player = this.players[i];
+      if (player.getScore() >= winningScore) {
+        this.gameContinue = false;
+        console.log(`Player ${i} reached ${winningScore}! Game session over!`);
+      }
+    }
+  }
+
+
+
+
+  findHeartValue() {
+    let heartValue = 3;
+    this.pitDeck.sortByValueAsc();
+    for (const card of this.pitDeck.getCards()) {
+      if (card.getSuit() === Suit.HEARTS && card.getValue() === heartValue + 1) {
+        heartValue = card.getValue();
+        console.log(`${card.toShortString()} is in the pit!`);
+      }
+    }
+    console.log(`Player with ${heartValue + 1} of heart bid and play first!`);
+    return heartValue;
+  }
 
 
 

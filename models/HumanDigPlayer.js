@@ -79,7 +79,7 @@ export class HumanDigPlayer extends DigPlayer {
 
   closeReadLine() {
     this.rl.close();
-    console.log(`I just closed readline`);
+    console.log(`I just closed ${this.name}'s readline.`);
   }
   //for testing in console
   selectCardByNotation(notation) {
