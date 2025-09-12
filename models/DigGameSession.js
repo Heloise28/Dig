@@ -20,6 +20,7 @@ export class DigGameSession {
 
     this.deck = DigGameEngine.createDeckForDig();
     DigGameEngine.raiseBigCardsValue(this.deck);
+    this.deck.flipDeck();
     this.pitDeck = new Deck();
     this.heartValue = 0;
 
@@ -68,7 +69,6 @@ export class DigGameSession {
      * @todo get the pit and update heart value
      */
     this.collectCards();
-    this.deck.flipDeck();
     this.deck.shuffle();
 
     this.bid = 0;

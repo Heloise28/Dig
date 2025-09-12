@@ -8,7 +8,7 @@ import { DigGameEngine } from '../models/DigGameEngine.js';
 import { DigRoundState } from '../models/DigRoundState.js';
 
 
-
+/*
 const noob = new AIDigPlayer('Noob', 1, 1, Personality.NOOB_BOT);
 const result = noob.AIEngine.findStraightBreakers([4,5,6,7,8,9,10], [4,5,6,7,8,9,10], 3);
 console.log(result);
@@ -20,4 +20,6 @@ noob.AIEngine.triples = [[8]];
 noob.AIEngine.quads = [[10]];
 
 noob.AIEngine.turnMaxCombsSafe();
-noob.AIEngine.printAvailableCombs(noob);   
+noob.AIEngine.printAvailableCombs(noob);  
+
+*/

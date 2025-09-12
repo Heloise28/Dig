@@ -1,7 +1,14 @@
 import { DigPlayer } from './DigPlayer.js';
 import { CardCombination } from './CardCombination.js';
 import { DigEasyAIEngine } from './DigEasyAIEngine.js';
-import readline from 'readline';
+let readline;
+if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+    // We're in Node.js
+    // Because if we are in browser, readline won't work.
+    readline = await import('readline');
+} else {
+  console.log("Not gonna import readline. We are not in console!");
+}
 
 /**
  * @todo To enable AI suggestions for human players, 
@@ -17,10 +24,15 @@ export class HumanDigPlayer extends DigPlayer {
 
     // But will be smarter later
     this.AIEngine = new DigEasyAIEngine();
-    this.rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    });
+    if (readline) {
+      // Use readline for Node.js testing
+      this.rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+    } else {
+      console.log("Console input not available in browser - use UI instead");
+    }
   } 
 
 /**
