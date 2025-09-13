@@ -16,6 +16,7 @@ async function main() {
   const vm = new VisualManager(canvas);
 
   vm.resizeCanvas();
+  vm.initiateAnimation();
 
   window.addEventListener('resize', () => vm.resizeCanvas());
   const session = new DigGameSession();

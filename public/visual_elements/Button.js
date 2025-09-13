@@ -1,25 +1,35 @@
 export class Button {
-  constructor(x, y, width, height, text, onClick) {
+  constructor(x, y, width, height, text, onMouseUp) {
       this.x = x;
       this.y = y;
       this.width = width;
       this.height = height;
       this.textKey = text;
-      this.onClick = onClick;
+      this.onMouseUp = onMouseUp;
       this.isHovered = false;
       this.isPressed = false;
     }
 
   drawButton(ctx, displayText) {
-    ctx.fillStyle = this.isPressed ? '#0056b3' : 
-                    this.isHovered ? '#007bff' : '#0d6efd';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    if (this.isHovered) {
+      ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; // Green glow, adjust color and alpha as needed
+      ctx.shadowBlur = 12; // Adjust blur amount for glow intensity
+      ctx.shadowOffsetX = 0; // For a centered glow
+      ctx.shadowOffsetY = 0; // For a centered glow
+    } else {      
+      ctx.shadowBlur = 0; // Cancel glow when hover out
+    }
 
-    ctx.strokeStyle = '#0056b3';
+    ctx.fillStyle = this.isPressed ? '#a39232ff' : 
+                    this.isHovered ? '#fde89bff' : '#f7dd36ff';
+    ctx.fillRect(this.x, this.y, this.width, this.height);    
+    ctx.shadowBlur = 0; // Somehow this stops everything else to glow
+
+    ctx.strokeStyle = '#2b2b2bff';
     ctx.lineWidth = 2;
     ctx.strokeRect(this.x, this.y, this.width, this.height);
 
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'black';
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -37,11 +47,21 @@ export class Button {
             mouseY <= this.y + this.height;
   }
 
-  handleClick(mouseX, mouseY) {
+  handleMouseUp(mouseX, mouseY) {
     if (this.isPointInside(mouseX, mouseY)) {
-      this.onClick();
+      this.onMouseUp();
       return true;
     }
+    return false;
+  }
+
+  handleMouseMove(mouseX, mouseY) {
+    if (this.isPointInside(mouseX, mouseY)) {
+      this.isHovered = true;
+      console.log(`Is hovered : ${this.isHovered}`);
+      return true;
+    }
+    this.isHovered = false;
     return false;
   }
 }

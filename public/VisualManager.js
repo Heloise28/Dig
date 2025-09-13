@@ -8,6 +8,9 @@ export class VisualManager {
 
     
     this.canvas.addEventListener('click', (event) => this.handleCanvasClick(event));
+    // this.canvas.addEventListener('mousedown', (event) => this.handleCanvasMouseDown(event));
+    this.canvas.addEventListener('mouseup', (event) => this.handleCanvasMouseUp(event));
+    this.canvas.addEventListener('mousemove', (event) => this.handleCanvasMouseMove(event));
     
     this.lang = 'en'; // Default English
 
@@ -21,36 +24,47 @@ export class VisualManager {
       () => this.toggleLanguage()
     );
 
+    // not done yet!!
     this.startButton = new Button(
       canvas.width * 0.9,
       canvas.height * 0.05,
       120,
       40,
-      'switch_lang', // translation key
+      'start_game', // translation key
       () => this.toggleLanguage()
     );
 
   }
 
+
   handleCanvasMouseMove(event) {
     const mouseX = event.offsetX;
     const mouseY = event.offsetY;
 
-    //然后把检查有没有在button里面的一样写到这颗里面是一个if
+    if (this.langButton.handleMouseMove(mouseX, mouseY)) {
+      // This is a common pattern for event handling.
+      // Button click handled, re-render will be triggered by toggleLanguage
+    }
 
   }
 
+  handleCanvasMouseUp(event) {
+    // The canvas.getBoundingClientRect() method in JavaScript returns a DOMRect object that provides information about the size and position of the canvas element relative to the viewport. 
+    const rect = this.canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    if (this.langButton.handleMouseUp(mouseX, mouseY)) {
+      // This is a common pattern for event handling.
+      // Button click handled, re-render will be triggered by toggleLanguage
+    }
+  }
 
   handleCanvasClick(event) {
     // The canvas.getBoundingClientRect() method in JavaScript returns a DOMRect object that provides information about the size and position of the canvas element relative to the viewport. 
     const rect = this.canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
-
-    if (this.langButton.handleClick(mouseX, mouseY)) {
-      // This is a common pattern for event handling.
-      // Button click handled, re-render will be triggered by toggleLanguage
-    }
   }
 
   async toggleLanguage() {
@@ -60,12 +74,39 @@ export class VisualManager {
     this.render();
   }
 
+
+
+
+
+  initiateAnimation() {
+    requestAnimationFrame(this.animate);
+  }
+
+ 
+  animate = (timestamp) => {  // Arrow function preserves 'this'
+    this.clearCanvas();
+    this.render();
+    requestAnimationFrame(this.animate);
+  }
+
+
+
+
+
+
+
+  // renders
+
   render() {
     this.renderMainMenu();
   }
 
+  clearCanvas() {
+    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
   renderMainMenu() {
-    this.ctx.fillStyle = 'rgba(77, 110, 188, 1)';
+    this.ctx.fillStyle = 'rgba(43, 87, 47, 1)';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Dummy text using translation key
