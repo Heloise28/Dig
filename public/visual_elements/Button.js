@@ -1,16 +1,22 @@
 export class Button {
-  constructor(x, y, width, height, text, onMouseUp) {
-      this.x = x;
-      this.y = y;
-      this.width = width;
-      this.height = height;
+  constructor(xRatio, yRatio, widthRatio, heightRatio, canvas, text, onMouseUp) {
+      this.xRatio = xRatio;
+      this.yRatio = yRatio;
+      this.widthRatio = widthRatio;
+      this.heightRatio = heightRatio;
+      this.x = canvas.width * xRatio;
+      this.y = canvas.height * yRatio;
+      this.width = canvas.width * widthRatio;
+      this.height = canvas.height * heightRatio;
       this.textKey = text;
       this.onMouseUp = onMouseUp;
       this.isHovered = false;
       this.isPressed = false;
+      this.display = true;
     }
 
   drawButton(ctx, displayText) {
+    if (!this.display) return;
     if (this.isHovered) {
       ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; // Green glow, adjust color and alpha as needed
       ctx.shadowBlur = 12; // Adjust blur amount for glow intensity
@@ -21,7 +27,7 @@ export class Button {
     }
 
     ctx.fillStyle = this.isPressed ? '#a39232ff' : 
-                    this.isHovered ? '#fde89bff' : '#f7dd36ff';
+                    this.isHovered ? '#f7d96cff' : '#f7dd36ff';
     ctx.fillRect(this.x, this.y, this.width, this.height);    
     ctx.shadowBlur = 0; // Somehow this stops everything else to glow
 
@@ -30,7 +36,7 @@ export class Button {
     ctx.strokeRect(this.x, this.y, this.width, this.height);
 
     ctx.fillStyle = 'black';
-    ctx.font = '16px Arial';
+    ctx.font = `${(this.height)*0.5 + ''}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(
@@ -48,6 +54,7 @@ export class Button {
   }
 
   handleMouseUp(mouseX, mouseY) {
+    if (!this.display) return false;
     if (this.isPointInside(mouseX, mouseY)) {
       this.onMouseUp();
       return true;
@@ -63,5 +70,20 @@ export class Button {
     }
     this.isHovered = false;
     return false;
+  }
+
+  handleResize(canvas) {
+    this.x = canvas.width * this.xRatio;
+    this.y = canvas.height * this.yRatio;
+    this.width = canvas.width * this.widthRatio;
+    this.height = canvas.height * this.heightRatio;
+    }
+
+  hideButton() {
+    this.display = false;
+  }
+
+  displayButton() {
+    this.display = true;
   }
 }

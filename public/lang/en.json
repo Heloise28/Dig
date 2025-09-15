@@ -1,8 +1,22 @@
 {
+  "title": "DIG",
+  "sub_title": "Authentic Northwestern-China Card Game",
+
+
+
+
+
   "start_game": "Start Game",
+  "switch_lang": "切换到中文",
+  "back_to_main": "Main Menu",
+
+
+
+
+
+
   "pause": "Pause",
   "score": "Score",
   "player_wins": "Player Wins!",
-  "game_over": "Game Over",
-  "switch_lang": "切换到中文"
+  "game_over": "Game Over"
 }

@@ -1,8 +1,22 @@
 {
+  "title": "挖坑",  
+  "sub_title": "正宗西北牌戏",
+
+
+
+
+
   "start_game": "开始游戏",
+  "switch_lang": "Switch to English",
+  "back_to_main": "回到主菜单",
+
+
+
+
+
+  
   "pause": "暂停",
   "score": "分数",
   "player_wins": "玩家获胜！",
-  "game_over": "游戏结束",
-  "switch_lang": "Switch to English"
+  "game_over": "游戏结束"
 }

@@ -52,6 +52,9 @@ export class Card {
     this.value = this.calculateValue();
     this.isSelected = false;
     
+    this.x = 0;
+    this.y = 0;
+    
     // Sound effect placeholders for future implementation
     this.soundEffects = {
       flip: null,
@@ -289,14 +292,11 @@ export class Card {
   /**
    * Get card image path based on rank and suit
    */
-  getImagePath() {
-    if (!this.isFaceUp) {
-      return '/assets/cards/standard-deck/back.png';
-    }
-    
+  getFaceImagePath() {
     // Handle jokers specially
+    // But I don't even have joker image. Haha
     if (this.rank === 'Joker' || this.rank === 'JOKER') {
-      return `/assets/cards/standard-deck/${this.suit}_joker.png`;
+      return `public/assets/cards/standard-deck/${this.suit}_Joker.png`;
     }
     
     const rankMap = {
@@ -321,6 +321,6 @@ export class Card {
     const rank = rankMap[this.rank] || this.rank;
     const suit = suitMap[this.suit];
     
-    return `/assets/cards/standard-deck/${rank}_of_${suit}.png`;
+    return `public/assets/cards/standard-deck/${rank}_of_${suit}.png`;
   }
 }
