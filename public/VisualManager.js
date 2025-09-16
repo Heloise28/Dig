@@ -1,4 +1,4 @@
-import { Button } from './visual_elements/Button.js';
+import { Button } from './Button.js';
 import { t, setLanguage } from './lang/i18n.js';
 
 export class VisualManager {
@@ -8,13 +8,20 @@ export class VisualManager {
     this.callbacks = {};
     this.gameSession = null;
 
+    this.mySeat = 2;
+    // left, center, right
+    this.positionOfSeats = new Array(3);
+    this.currentSeat = -1;
+
     this.lang = 'en'; // Default English
 
     this.buttons = new Map();
     this.loadButtons();
     this.setUpEventListeners();
 
-    this.cardVisibleWidth = 38;
+    this.allCards = [];
+    this.cardVisibleWidth = 25;
+    this.cardVisibleHeight = 25;
     this.cardWidth = 122;
     this.cardHeight = 177;
     this.cardImageMap = null;
@@ -33,6 +40,19 @@ export class VisualManager {
     this.moveCardSpeedX = 0;
     this.moveCardSpeedY = 0;
 
+    this.anchorOffsetX = 0;
+    this.anchorOffsetY = 0;
+
+    this.handAnchorLeftX = 100;
+    this.handAnchorLeftY = 100;
+    this.handAnchorRightX = 1180;
+    this.handAnchorRightY = 100;
+    this.handAnchorCenterX = 640;
+    this.handAnchorCenterY = 560;
+
+    this.deckAnchorX = this.canvas.width / 2 - 61;
+    this.deckAnchorY = this.canvas.height / 3 - 88;
+
   }
 
 
@@ -41,6 +61,8 @@ export class VisualManager {
     await this.loadAllCardImages();
     console.log('Load all card image done!');
     this.loadAllCardXY();
+    this.setPositionOfSeats();
+    this.resetAnchorOffset();
   }
 
 
@@ -94,13 +116,6 @@ export class VisualManager {
 
 
 
-
-
-
-
-
-
-
   initiateAnimation() {
     requestAnimationFrame(this.animate);
   }
@@ -128,7 +143,7 @@ export class VisualManager {
   updateInitialDealingAnimation() {
     // If currently animating a card → move it
     if (this.currentAnimatingCard) {
-      const { card, targetX, targetY, speedX, speedY } = this.currentAnimatingCard;
+      const { card, toX, toY, speedX, speedY } = this.currentAnimatingCard;
       const [x, y] = this.cardXYMap.get(card);
 
       // Move closer to target
@@ -136,34 +151,59 @@ export class VisualManager {
       let newY = y + speedY;
 
       // Check if reached destination (simple overshoot check)
-      if ((speedX >= 0 && newX >= targetX) || (speedX < 0 && newX <= targetX)) {
-        newX = targetX;
+      if ((speedX >= 0 && newX >= toX) || (speedX < 0 && newX <= toX)) {
+        newX = toX;
       }
-      if ((speedY >= 0 && newY >= targetY) || (speedY < 0 && newY <= targetY)) {
-        newY = targetY;
+      if ((speedY >= 0 && newY >= toY) || (speedY < 0 && newY <= toY)) {
+        newY = toY;
       }
 
       this.cardXYMap.set(card, [newX, newY]);
 
       // Done? → clear current card
-      if (newX === targetX && newY === targetY) {
+      if (newX === toX && newY === toY) {
         this.currentAnimatingCard = null;
       }
-
+      // console.log(`Moving ${card}`);  
       return; // ✅ only one card animates at a time
     }
 
     // If no card animating and queue has cards → start next one
     if (this.cardsToMove.length > 0) {
       const card = this.cardsToMove.shift();
+      this.setCurrentSeat(this.currentSeat >= 2 ? 0 : this.currentSeat + 1);
+      console.log(`current seat is ${this.currentSeat}`);
+      // console.log(`Dealing ${card} to seat ${this.currentSeat}`);
 
-      // Example: send it to (500, 500). You’d calculate based on player seat.
+      let targetX = 0;
+      let targetY = 0;
+
+      if (this.currentSeat === this.mySeat) {
+        targetX = this.handAnchorCenterX + this.anchorOffsetX;
+        targetY = this.handAnchorCenterY;
+
+      } else if (this.currentSeat === (this.mySeat + 1) % 3) {
+        targetX = this.handAnchorLeftX;
+        targetY = this.handAnchorLeftY + this.anchorOffsetY;
+      } else {        
+        targetX = this.handAnchorRightX;
+        targetY = this.handAnchorRightY + this.anchorOffsetY;
+      }
+
+      if (this.currentSeat === 0) {
+        this.anchorOffsetX += this.cardVisibleWidth;
+        this.anchorOffsetY += this.cardVisibleHeight;
+      }
+
+      let speedX = this.findSpeed(this.cardXYMap.get(card)[0], targetX, 1);
+      let speedY = this.findSpeed(this.cardXYMap.get(card)[1], targetY, 1);
+
       this.currentAnimatingCard = {
         card,
-        targetX: 500,
-        targetY: 500,
-        speedX: 5,
-        speedY: 5
+        toX: targetX,
+        toY: targetY,
+        speedX: speedX,
+        speedY: speedY
       };
       return;
     }
@@ -175,6 +215,7 @@ export class VisualManager {
       this.setStage(11); // advance stage
     }
   }
+
 
   // moveCard(card, toX, toY, perSecondX, perSecondY) {
   //   const xy = this.cardXYMap.get(card);
@@ -193,12 +234,7 @@ export class VisualManager {
     if (this.stage === 10) {
       this.renderGameStart();
     }
-
-    if (this.stage > 0) {
-      this.buttons.get('back').drawButton(this.ctx, t(this.buttons.get('back').textKey));
-    }
-    // Update button text based on current language
-    this.buttons.get('lang').drawButton(this.ctx, t(this.buttons.get('lang').textKey));
+    this.drawAllButtons();
   }
 
   clearCanvas() {
@@ -230,19 +266,14 @@ export class VisualManager {
       this.canvas.height * 0.45
     );
 
-    this.buttons.get('start').drawButton(this.ctx, t(this.buttons.get('start').textKey));
   }
 
   renderGameStart() { 
     this.ctx.fillStyle = 'rgba(43, 87, 47, 1)';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    let initialDeckX = this.canvas.width / 2 - 61;
-    let initialDeckY = this.canvas.height / 3 - 88;
+    this.drawAllCardsFace();
 
-    for (const card of this.gameSession.deck.getCards()) {
-      this.drawCardBack(card);
-    }
   }
 
   drawCardFace(card) {
@@ -251,6 +282,24 @@ export class VisualManager {
 
   drawCardBack(card) {
     this.ctx.drawImage(this.cardBackImage, this.cardXYMap.get(card)[0], this.cardXYMap.get(card)[1], this.cardWidth, this.cardHeight);
+  }
+
+  drawAllCardsFace() {
+    for (const card of this.allCards) {
+      this.drawCardFace(card);
+    }
+  }
+
+  drawAllCardsBack() {
+    for (const card of this.allCards) {
+      this.drawCardBack(card);
+    }
+  }
+
+  drawAllButtons() {
+    this.buttons.forEach((value, key) => {
+      value.drawButton(this.ctx, t(value.textKey));
+    });
   }
 
 
@@ -272,6 +321,16 @@ export class VisualManager {
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
     this.buttons.forEach((value) => value.handleResize(this.canvas));
+
+    this.handAnchorLeftX = this.canvas.width * 0.09 - this.cardWidth / 2;
+    this.handAnchorLeftY = this.canvas.height * 0.15 - this.cardHeight / 2;
+    this.handAnchorRightX = this.canvas.width * 0.91 - this.cardWidth / 2;
+    this.handAnchorRightY = this.canvas.height * 0.15 - this.cardHeight / 2;
+    this.handAnchorCenterX = this.canvas.width * 0.43 - this.cardWidth / 2;
+    this.handAnchorCenterY = this.canvas.height * 0.6 - this.cardHeight / 2;
+
+    this.deckAnchorX = this.canvas.width / 2 - this.cardWidth / 2;
+    this.deckAnchorY = this.canvas.height / 3 - this.cardHeight / 2;
 
     this.render();
     console.log('resizing!');
@@ -366,7 +425,7 @@ export class VisualManager {
     const cardXYMap = new Map();
 
     for (const card of cards) {
-      cardXYMap.set(card, [0,0]);
+      cardXYMap.set(card, [this.deckAnchorX,this.deckAnchorY]);
     }
     this.cardXYMap = cardXYMap;
   }
@@ -381,28 +440,63 @@ export class VisualManager {
 
   setStage(n) {
     this.stage = n;
+
+    this.buttons.forEach((value, key) => {
+      value.hideButton();
+    });
+
+    this.buttons.get('lang').displayButton();
+
+    if (n === 0) {
+      this.buttons.get('start').displayButton();
+    }
+    if (n > 0) {
+      this.buttons.get('back').displayButton();
+    }
   }
 
   setCallbacks(callbacks) {
     this.callbacks = callbacks;
   }
 
-  updateGameSession(gameSession) {
+  updateGameSessionState(gameSession) {
     this.gameSession = gameSession;
   }
 
   // Call this before stage 10 starts
   startMovingCards(cards) {
+    // console.log(`Gonna move these cards: ${cards}`);
+
     // Queue of cards to deal
     this.cardsToMove = [...cards];   // copy array
     this.currentAnimatingCard = null;
     this.movingFinished = false;
+    
   }
 
   findSpeed(from, to, seconds) {
     const d = to - from;
     const frames = seconds * 60;
     return d / frames; // units per frame
+  }
+
+  setPositionOfSeats() {
+    this.positionOfSeats[this.mySeat] = 'center';
+    this.positionOfSeats[(this.mySeat + 1) % 3] = 'right';
+    this.positionOfSeats[(this.mySeat + 2) % 3] = 'left';
+  }
+
+  setCurrentSeat(n) {
+    this.currentSeat = n;
+  }
+
+  storeAllCards(cards) {
+    this.allCards = cards;
+  }
+
+  resetAnchorOffset() { 
+    this.anchorOffsetX = 0;
+    this.anchorOffsetY = 0;
   }
 
 }

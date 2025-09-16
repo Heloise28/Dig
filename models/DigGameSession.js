@@ -21,6 +21,7 @@ export class DigGameSession {
     this.deck = DigGameEngine.createDeckForDig();
     DigGameEngine.raiseBigCardsValue(this.deck);
     this.deck.flipDeck();
+    this.deck.sortByValueAsc();
     this.pitDeck = new Deck();
     this.heartValue = 0;
 
@@ -33,11 +34,14 @@ export class DigGameSession {
   }
 
 
+  runLocalGUITest() {
+    this.addAIPlayer('Noobie', 0, 1, Personality.NOOB_BOT);
+    this.addAIPlayer('Noobolobus', 1, 1, Personality.NOOB_BOT);
+    this.addHumanPlayer('John', 2);
+    this.resetGame();
+  }
 
-
-
-
-  async runDigGameSession() {
+  async runConsoleTest() {
     this.addAIPlayer('Noobie', 0, 1, Personality.NOOB_BOT);
     this.addAIPlayer('Noobolobus', 1, 1, Personality.NOOB_BOT);
     this.addHumanPlayer('John', 2);
@@ -57,8 +61,8 @@ export class DigGameSession {
 
   async runDigGame() {
     this.resetGame();
-    await this.runBidding();
-    await this.runPlaying();
+    await this.runConsoleBidding();
+    await this.runConsolePlaying();
     this.updateScore();
   }
 
@@ -96,7 +100,7 @@ export class DigGameSession {
   }
 
 
-  async runBidding() {
+  async runConsoleBidding() {
     console.log('------ Digging begins! How much y\'all want to dig?')
     console.log('Your cards: ', this.players[2].toString());
     this.passesCount = 0;
@@ -163,8 +167,7 @@ export class DigGameSession {
    * @todo gather all cards
    * @todo updated played cards
    */
-
-  async runPlaying() {
+  async runConsolePlaying() {
       console.log('\n------------  You versus 2 noobs BEGIN! ------------');
 
       this.passesCount = 0;
