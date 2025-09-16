@@ -35,10 +35,13 @@ async function main() {
       vm.setStage(10);
 
       const cardsToDeal = new Array(52);
+      let j = gameSession.startPlayerIndex;
+      vm.setCurrentSeat((j - 1) % 3);
+      vm.setStartSeat(j);
       for (let i = 0; i < 16; i++) {
-        cardsToDeal[i*3 + 0] = gameSession.players[0].getHand().getCards()[i];
-        cardsToDeal[i*3 + 1] = gameSession.players[1].getHand().getCards()[i];
-        cardsToDeal[i*3 + 2] = gameSession.players[2].getHand().getCards()[i];
+        cardsToDeal[i*3 + 0] = gameSession.players[j].getHand().getCards()[i];
+        cardsToDeal[i*3 + 1] = gameSession.players[(j + 1) % 3].getHand().getCards()[i];
+        cardsToDeal[i*3 + 2] = gameSession.players[(j + 2) % 3].getHand().getCards()[i];
       }
       cardsToDeal[48] = gameSession.pitDeck.getCards()[0];
       cardsToDeal[49] = gameSession.pitDeck.getCards()[1];

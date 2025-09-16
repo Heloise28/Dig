@@ -12,6 +12,7 @@ export class VisualManager {
     // left, center, right
     this.positionOfSeats = new Array(3);
     this.currentSeat = -1;
+    this.startSeat = -1;
 
     this.lang = 'en'; // Default English
 
@@ -50,8 +51,8 @@ export class VisualManager {
     this.handAnchorCenterX = 640;
     this.handAnchorCenterY = 560;
 
-    this.deckAnchorX = this.canvas.width / 2 - 61;
-    this.deckAnchorY = this.canvas.height / 3 - 88;
+    this.deckAnchorX = this.canvas.width / 2 - this.cardWidth / 2;
+    this.deckAnchorY = this.canvas.height / 3 - this.cardHeight / 2;
 
   }
 
@@ -171,6 +172,12 @@ export class VisualManager {
     // If no card animating and queue has cards → start next one
     if (this.cardsToMove.length > 0) {
       const card = this.cardsToMove.shift();
+
+      if (this.currentSeat === this.startSeat) {
+        this.anchorOffsetX += this.cardVisibleWidth;
+        this.anchorOffsetY += this.cardVisibleHeight;
+      }
+      
       this.setCurrentSeat(this.currentSeat >= 2 ? 0 : this.currentSeat + 1);
       console.log(`current seat is ${this.currentSeat}`);
       // console.log(`Dealing ${card} to seat ${this.currentSeat}`);
@@ -190,13 +197,8 @@ export class VisualManager {
         targetY = this.handAnchorRightY + this.anchorOffsetY;
       }
 
-      if (this.currentSeat === 0) {
-        this.anchorOffsetX += this.cardVisibleWidth;
-        this.anchorOffsetY += this.cardVisibleHeight;
-      }
-
-      let speedX = this.findSpeed(this.cardXYMap.get(card)[0], targetX, 1);
-      let speedY = this.findSpeed(this.cardXYMap.get(card)[1], targetY, 1);
+      let speedX = this.findSpeed(this.cardXYMap.get(card)[0], targetX, 0.3);
+      let speedY = this.findSpeed(this.cardXYMap.get(card)[1], targetY, 0.3);
 
       this.currentAnimatingCard = {
         card,
@@ -488,6 +490,10 @@ export class VisualManager {
 
   setCurrentSeat(n) {
     this.currentSeat = n;
+  }
+
+  setStartSeat(n) {
+    this.startSeat = n;
   }
 
   storeAllCards(cards) {
