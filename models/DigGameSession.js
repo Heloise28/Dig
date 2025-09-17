@@ -92,6 +92,10 @@ export class DigGameSession {
     this.players[1].sortHandAscByValue();
     this.players[2].sortHandAscByValue();
 
+    console.log(this.players[0].toString());
+    console.log(this.players[1].toString());
+    console.log(this.players[2].toString()); 
+
     this.players[0].updateHandAnalysis(); 
     this.players[1].updateHandAnalysis(); 
     this.players[2].updateHandAnalysis();

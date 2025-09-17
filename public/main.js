@@ -23,32 +23,33 @@ async function main() {
   vm.setStage(0);
   window.addEventListener('resize', () => vm.resizeCanvas());
 
-  vm.initiateAnimation();
+  vm.initAnimation();
 
   vm.setCallbacks({
     onStartGame: async () => {
       gameSession = new DigGameSession();
 
-      vm.updateGameSessionState(gameSession);
-      await vm.initiateGameSession();
-      gameSession.runLocalGUITest();
-      vm.setStage(10);
+      gameSession.runLocalGUITest(); 
 
-      const cardsToDeal = new Array(52);
       let j = gameSession.startPlayerIndex;
-      vm.setCurrentSeat((j - 1) % 3);
-      vm.setStartSeat(j);
+      const cardsToDeal = new Array(52);
       for (let i = 0; i < 16; i++) {
         cardsToDeal[i*3 + 0] = gameSession.players[j].getHand().getCards()[i];
         cardsToDeal[i*3 + 1] = gameSession.players[(j + 1) % 3].getHand().getCards()[i];
         cardsToDeal[i*3 + 2] = gameSession.players[(j + 2) % 3].getHand().getCards()[i];
-      }
+      }  
       cardsToDeal[48] = gameSession.pitDeck.getCards()[0];
       cardsToDeal[49] = gameSession.pitDeck.getCards()[1];
       cardsToDeal[50] = gameSession.pitDeck.getCards()[2];
       cardsToDeal[51] = gameSession.pitDeck.getCards()[3];
+      
+      
+      vm.setCurrentSeat(j);
+      vm.setStartSeat(j);
+      await vm.initGameSession(cardsToDeal);
+      vm.setStage(10);
       vm.startMovingCards(cardsToDeal);
-      vm.storeAllCards(cardsToDeal);
+
 
       console.log("just create game session");
       // const initialState = gameSession.startGame();

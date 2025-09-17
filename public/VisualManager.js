@@ -6,7 +6,6 @@ export class VisualManager {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext('2d');
     this.callbacks = {};
-    this.gameSession = null;
 
     this.mySeat = 2;
     // left, center, right
@@ -20,14 +19,16 @@ export class VisualManager {
     this.loadButtons();
     this.setUpEventListeners();
 
-    this.allCards = [];
+    this.allCardsToRender = [];
     this.cardVisibleWidth = 25;
     this.cardVisibleHeight = 25;
+    this.cardBackVisibleHeight = 8;
     this.cardWidth = 122;
     this.cardHeight = 177;
     this.cardImageMap = null;
     this.cardBackImage = null;
     this.cardXYMap = null;
+    this.cardVisualsMap = new Map();
     
     // 0 -> main menu
     // 10 -> Start a game, deal cards, wait for bidding
@@ -35,35 +36,33 @@ export class VisualManager {
 
     this.cardsToMove = [];   // copy array
     this.currentAnimatingCard = null;
-    this.movingFinished = true; 
-    this.moveCardToX = 0;
-    this.moveCardToY = 0;
-    this.moveCardSpeedX = 0;
-    this.moveCardSpeedY = 0;
+    this.movingFinished = true; // true when all cards moved
+    this.offsetMultiple = 0;
 
-    this.anchorOffsetX = 0;
-    this.anchorOffsetY = 0;
+    this.handAnchorLeftX = 0.09;
+    this.handAnchorLeftY = 0.15;
+    this.handAnchorRightX = 0.91;
+    this.handAnchorRightY = 0.15;
+    this.handAnchorCenterX = 0.25;
+    this.handAnchorCenterY = 0.7;
+    this.pitAnchorX = 0.25;
+    this.pitAnchorY = 0.15;
 
-    this.handAnchorLeftX = 100;
-    this.handAnchorLeftY = 100;
-    this.handAnchorRightX = 1180;
-    this.handAnchorRightY = 100;
-    this.handAnchorCenterX = 640;
-    this.handAnchorCenterY = 560;
-
-    this.deckAnchorX = this.canvas.width / 2 - this.cardWidth / 2;
-    this.deckAnchorY = this.canvas.height / 3 - this.cardHeight / 2;
-
+    this.deckAnchorX = 0.09;
+    this.deckAnchorY = 0.7;
   }
 
 
   
-  async initiateGameSession() {
+  async initGameSession(cardsToDeal) {
+      
+    this.storeallCardsToRender(cardsToDeal); 
     await this.loadAllCardImages();
     console.log('Load all card image done!');
-    this.loadAllCardXY();
+    this.initCardVisualsMap(this.allCardsToRender);
+    this.setAllCardVisualOwners();
+
     this.setPositionOfSeats();
-    this.resetAnchorOffset();
   }
 
 
@@ -117,14 +116,14 @@ export class VisualManager {
 
 
 
-  initiateAnimation() {
+  initAnimation() {
     requestAnimationFrame(this.animate);
   }
 
  
   animate = (timestamp) => {  // Arrow function preserves 'this'
     this.clearCanvas();
-    this.update(this.gameSession);
+    this.update();
     this.render();
     requestAnimationFrame(this.animate);
   }
@@ -132,9 +131,37 @@ export class VisualManager {
 
 
   // Updates
-  update(session) {
+  update() {
     if (this.stage === 10) {
-      this.updateInitialDealingAnimation(session.deck.getCards());
+      this.updateInitialDealingAnimation();
+    }
+  }
+
+  moveCurrentAnimatingCard() {
+    if (!this.currentAnimatingCard) return; 
+    const { card, toX, toY, speedX, speedY } = this.currentAnimatingCard;
+    const visual = this.cardVisualsMap.get(card);
+
+    const x = visual.x;
+    const y = visual.y;
+    // Move closer to target
+    let newX = x + speedX;
+    let newY = y + speedY;
+
+    // Check if reached destination (simple overshoot check)
+    if ((speedX >= 0 && newX >= toX) || (speedX < 0 && newX <= toX)) {
+      newX = toX;
+    }
+    if ((speedY >= 0 && newY >= toY) || (speedY < 0 && newY <= toY)) {
+      newY = toY;
+    }
+
+    visual.x = newX;
+    visual.y = newY;
+
+    // Done? → clear current card
+    if (newX === toX && newY === toY) {
+      this.currentAnimatingCard = null;
     }
   }
 
@@ -144,28 +171,7 @@ export class VisualManager {
   updateInitialDealingAnimation() {
     // If currently animating a card → move it
     if (this.currentAnimatingCard) {
-      const { card, toX, toY, speedX, speedY } = this.currentAnimatingCard;
-      const [x, y] = this.cardXYMap.get(card);
-
-      // Move closer to target
-      let newX = x + speedX;
-      let newY = y + speedY;
-
-      // Check if reached destination (simple overshoot check)
-      if ((speedX >= 0 && newX >= toX) || (speedX < 0 && newX <= toX)) {
-        newX = toX;
-      }
-      if ((speedY >= 0 && newY >= toY) || (speedY < 0 && newY <= toY)) {
-        newY = toY;
-      }
-
-      this.cardXYMap.set(card, [newX, newY]);
-
-      // Done? → clear current card
-      if (newX === toX && newY === toY) {
-        this.currentAnimatingCard = null;
-      }
-      // console.log(`Moving ${card}`);  
+      this.moveCurrentAnimatingCard();
       return; // ✅ only one card animates at a time
     }
 
@@ -173,32 +179,35 @@ export class VisualManager {
     if (this.cardsToMove.length > 0) {
       const card = this.cardsToMove.shift();
 
-      if (this.currentSeat === this.startSeat) {
-        this.anchorOffsetX += this.cardVisibleWidth;
-        this.anchorOffsetY += this.cardVisibleHeight;
+      let visual = this.cardVisualsMap.get(card);
+
+      if (visual.seatOfOwner !== -1) {
+        if (visual.seatOfOwner === this.mySeat) {
+          this.setCardVisualAnchor(card, 'hand_center', this.offsetMultiple);
+        } else if (visual.seatOfOwner === (this.mySeat + 1) % 3) { 
+          this.setCardVisualAnchor(card, 'hand_right', this.offsetMultiple);
+        } else if (visual.seatOfOwner === (this.mySeat + 2) % 3) {
+          this.setCardVisualAnchor(card, 'hand_left', this.offsetMultiple);
+        } else if (visual.seatOfOwner === 8) {
+          this.setCardVisualAnchor(card, 'pit', this.offsetMultiple);
+        }
+
+        this.setCurrentSeat(this.currentSeat >= 2 ? 0 : this.currentSeat + 1);
+        if (this.currentSeat === this.startSeat) {
+          this.offsetMultiple ++;
+        }
+      
+      } else {
+        if (this.offsetMultiple > 3) this.offsetMultiple = 0;
+        this.setCardVisualAnchor(card, 'pit', this.offsetMultiple);
+        this.offsetMultiple ++;
       }
       
-      this.setCurrentSeat(this.currentSeat >= 2 ? 0 : this.currentSeat + 1);
-      console.log(`current seat is ${this.currentSeat}`);
-      // console.log(`Dealing ${card} to seat ${this.currentSeat}`);
+      let targetX = visual.anchorX + visual.offsetX * visual.offsetTimesX;
+      let targetY = visual.anchorY + visual.offsetY * visual.offsetTimesY;
 
-      let targetX = 0;
-      let targetY = 0;
-
-      if (this.currentSeat === this.mySeat) {
-        targetX = this.handAnchorCenterX + this.anchorOffsetX;
-        targetY = this.handAnchorCenterY;
-
-      } else if (this.currentSeat === (this.mySeat + 1) % 3) {
-        targetX = this.handAnchorLeftX;
-        targetY = this.handAnchorLeftY + this.anchorOffsetY;
-      } else {        
-        targetX = this.handAnchorRightX;
-        targetY = this.handAnchorRightY + this.anchorOffsetY;
-      }
-
-      let speedX = this.findSpeed(this.cardXYMap.get(card)[0], targetX, 0.3);
-      let speedY = this.findSpeed(this.cardXYMap.get(card)[1], targetY, 0.3);
+      let speedX = this.findSpeed(visual.x, targetX, 0.3);
+      let speedY = this.findSpeed(visual.y, targetY, 0.3);
 
       this.currentAnimatingCard = {
         card,
@@ -212,9 +221,9 @@ export class VisualManager {
 
     // If no more cards left → mark finished
     if (!this.movingFinished) {
+      this.offsetMultiple = 0;
       this.movingFinished = true;
-      console.log("✅ Finished moving cards");
-      this.setStage(11); // advance stage
+      this.setStage(20); // advance stage
     }
   }
 
@@ -235,6 +244,11 @@ export class VisualManager {
     }
     if (this.stage === 10) {
       this.renderGameStart();
+    }
+    if (this.stage === 20) {
+      this.ctx.fillStyle = 'rgba(43, 87, 47, 1)';
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);   
+      this.drawAllCardsAfterDealing();
     }
     this.drawAllButtons();
   }
@@ -274,29 +288,75 @@ export class VisualManager {
     this.ctx.fillStyle = 'rgba(43, 87, 47, 1)';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    this.drawAllCardsFace();
-
+    this.drawCardsBackXY(this.allCardsToRender);
   }
 
-  drawCardFace(card) {
-    this.ctx.drawImage(this.cardImageMap.get(card), this.cardXYMap.get(card)[0], this.cardXYMap.get(card)[1], this.cardWidth, this.cardHeight);
+
+  drawCardFaceXY(card) {
+    let visual = this.cardVisualsMap.get(card);
+    if (!visual) return;
+    this.ctx.drawImage(visual.faceImage, visual.x, visual.y, this.cardWidth, this.cardHeight);
   }
 
-  drawCardBack(card) {
-    this.ctx.drawImage(this.cardBackImage, this.cardXYMap.get(card)[0], this.cardXYMap.get(card)[1], this.cardWidth, this.cardHeight);
-  }
 
-  drawAllCardsFace() {
-    for (const card of this.allCards) {
-      this.drawCardFace(card);
+  drawCardsFaceXY(cards) {
+    for (const card of cards) {
+      this.drawCardFaceXY(card);
     }
   }
 
-  drawAllCardsBack() {
-    for (const card of this.allCards) {
-      this.drawCardBack(card);
+  drawCardBackXY(card) {
+    let visual = this.cardVisualsMap.get(card);
+    if (!visual) return;
+    this.ctx.drawImage(this.cardBackImage, visual.x, visual.y, this.cardWidth, this.cardHeight);
+  }
+
+
+  drawCardsBackXY(cards) {
+    for (const card of cards) {
+      this.drawCardBackXY(card);
     }
   }
+
+  drawCardFaceAnchor(card) {
+    let visual = this.cardVisualsMap.get(card);
+    if (!visual) return;
+    let x = visual.anchorX + visual.offsetX * visual.offsetTimesX;
+    let y = visual.anchorY + visual.offsetY * visual.offsetTimesY;
+    this.ctx.drawImage(visual.faceImage, x, y, this.cardWidth, this.cardHeight);
+  }
+
+  drawCardsFaceAnchor(cards) {
+    for (const card of cards) {
+      this.drawCardFaceAnchor(card);
+    }
+  }
+
+  drawCardBackAnchor(card) {
+    let visual = this.cardVisualsMap.get(card);
+    if (!visual) return;
+    let x = visual.anchorX + visual.offsetX * visual.offsetTimesX;
+    let y = visual.anchorY + visual.offsetY * visual.offsetTimesY;
+    this.ctx.drawImage(this.cardBackImage, x, y, this.cardWidth, this.cardHeight);
+  }
+
+  drawCardsBackAcnhor(cards) {
+    for (const card of cards) {
+      this.drawCardBackAnchor(card);
+    }
+  }
+
+  drawAllCardsAfterDealing() {
+    for (const card of this.allCardsToRender) {
+      let visual = this.cardVisualsMap.get(card);
+      if (visual.anchor === 'hand_left' || visual.anchor === 'hand_right') {
+        this.drawCardBackAnchor(card);
+      } else {
+        this.drawCardFaceAnchor(card);
+      }
+    }
+  }
+
 
   drawAllButtons() {
     this.buttons.forEach((value, key) => {
@@ -322,17 +382,11 @@ export class VisualManager {
     this.canvas.height = h;
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
+
+
+    if (this.stage > 0) this.updateCardVisualsAnchor();
+
     this.buttons.forEach((value) => value.handleResize(this.canvas));
-
-    this.handAnchorLeftX = this.canvas.width * 0.09 - this.cardWidth / 2;
-    this.handAnchorLeftY = this.canvas.height * 0.15 - this.cardHeight / 2;
-    this.handAnchorRightX = this.canvas.width * 0.91 - this.cardWidth / 2;
-    this.handAnchorRightY = this.canvas.height * 0.15 - this.cardHeight / 2;
-    this.handAnchorCenterX = this.canvas.width * 0.43 - this.cardWidth / 2;
-    this.handAnchorCenterY = this.canvas.height * 0.6 - this.cardHeight / 2;
-
-    this.deckAnchorX = this.canvas.width / 2 - this.cardWidth / 2;
-    this.deckAnchorY = this.canvas.height / 3 - this.cardHeight / 2;
 
     this.render();
     console.log('resizing!');
@@ -351,8 +405,8 @@ export class VisualManager {
     this.buttons.set(
       'lang',
       new Button(
-        0.6,
-        0.1,
+        0.8,
+        0.05,
         0.1,
         0.033,
         this.canvas,
@@ -377,7 +431,7 @@ export class VisualManager {
     this.buttons.set(
       'back',
       new Button(
-        0.6,
+        0.8,
         0.9,
         0.15, 
         0.067,
@@ -401,7 +455,7 @@ export class VisualManager {
     });
 
     // Load face images
-    const cards = this.gameSession.deck.getCards();
+    const cards = this.allCardsToRender;
     const cardImageMap = new Map();
 
     const faceImagePromises = cards.map(card => {
@@ -422,15 +476,15 @@ export class VisualManager {
     this.cardImageMap = cardImageMap;
   }
 
-  loadAllCardXY() {
-    const cards = this.gameSession.deck.getCards();
-    const cardXYMap = new Map();
+  // loadAllCardXY() {
+  //   const cards = this.gameSession.deck.getCards();
+  //   const cardXYMap = new Map();
 
-    for (const card of cards) {
-      cardXYMap.set(card, [this.deckAnchorX,this.deckAnchorY]);
-    }
-    this.cardXYMap = cardXYMap;
-  }
+  //   for (const card of cards) {
+  //     cardXYMap.set(card, [this.deckAnchorX * this.canvas.width,this.deckAnchorY * this.canvas.height]);
+  //   }
+  //   this.cardXYMap = cardXYMap;
+  // }
 
 
   setUpEventListeners() {
@@ -461,14 +515,12 @@ export class VisualManager {
     this.callbacks = callbacks;
   }
 
-  updateGameSessionState(gameSession) {
-    this.gameSession = gameSession;
-  }
+  // storeGameSession(gameSession) {
+  //   this.gameSession = gameSession;
+  // }
 
   // Call this before stage 10 starts
   startMovingCards(cards) {
-    // console.log(`Gonna move these cards: ${cards}`);
-
     // Queue of cards to deal
     this.cardsToMove = [...cards];   // copy array
     this.currentAnimatingCard = null;
@@ -496,13 +548,122 @@ export class VisualManager {
     this.startSeat = n;
   }
 
-  storeAllCards(cards) {
-    this.allCards = cards;
+  storeallCardsToRender(cards) {
+    this.allCardsToRender = cards;
   }
 
-  resetAnchorOffset() { 
-    this.anchorOffsetX = 0;
-    this.anchorOffsetY = 0;
+  // Fetch visual informations here
+  initCardVisualsMap(cards) {
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+      // Optionally set event handlers:
+      this.cardVisualsMap.set(
+        card,
+        {
+          faceImage: this.cardImageMap.get(card),
+
+          seatOfOwner: -1,
+          // deck, hand_left, hand_right, hand_center, pit
+          anchor: 'deck',
+          anchorX: this.deckAnchorX * this.canvas.width,
+          anchorY: this.deckAnchorY * this.canvas.height,
+
+          offsetX: 0,
+          offsetY: 0,
+          offsetTimesX: 0,
+          offsetTimesY: 0,
+
+          x: this.deckAnchorX * this.canvas.width,
+          y: this.deckAnchorY * this.canvas.height,
+
+          onMouseUp: () => { /* ... */ },
+          onHover: () => { /* ... */ },
+        }
+      )
+    }
   }
+
+  setCardVisualsOwner(card, seat) {
+    this.cardVisualsMap.get(card).seatOfOwner = seat;
+  }
+
+  setAllCardVisualOwners() {
+    for (let i = 0; i < 48; i++) {
+      this.setCardVisualsOwner(this.allCardsToRender[i], (this.currentSeat + i) % 3);
+    }
+  }
+
+  setCardVisualAnchor(card, anchor, times) {
+    const visual = this.cardVisualsMap.get(card);
+    if (!visual) return;
+    visual.anchor = anchor;
+    if (anchor === 'deck') {
+        visual.anchorX = this.deckAnchorX * this.canvas.width;
+        visual.anchorY = this.deckAnchorY * this.canvas.height;
+        visual.offsetX = 0;
+        visual.offsetY = 0;
+        visual.offsetTimesX = 0;
+        visual.offsetTimesY = 0;
+
+    } else if (anchor === 'hand_center') {
+        visual.anchorX = this.handAnchorCenterX * this.canvas.width;
+        visual.anchorY = this.handAnchorCenterY * this.canvas.height;
+        visual.offsetX = this.cardVisibleWidth;
+        visual.offsetY = 0;
+        visual.offsetTimesX = times || 0;
+        visual.offsetTimesY = 0;
+
+    } else if (anchor === 'hand_left') {
+        visual.anchorX = this.handAnchorLeftX * this.canvas.width;
+        visual.anchorY = this.handAnchorLeftY * this.canvas.height;
+        visual.offsetX = 0;
+        visual.offsetY = this.cardBackVisibleHeight;
+        visual.offsetTimesX = 0;
+        visual.offsetTimesY = times;
+    } else if (anchor === 'hand_right') {
+        visual.anchorX = this.handAnchorRightX * this.canvas.width - this.cardWidth;
+        visual.anchorY = this.handAnchorRightY * this.canvas.height;
+        visual.offsetX = 0;
+        visual.offsetY = this.cardBackVisibleHeight;
+        visual.offsetTimesX = 0;
+        visual.offsetTimesY = times;
+    } else if (anchor === 'pit') {
+        visual.anchorX = this.pitAnchorX * this.canvas.width;
+        visual.anchorY = this.pitAnchorY * this.canvas.height;
+        visual.offsetX = this.cardWidth + 10;
+        visual.offsetY = 0;
+        visual.offsetTimesX = times;
+        visual.offsetTimesY = 0;
+    }
+  }
+
+  // Call when canvas resize
+  updateCardVisualsAnchor() {
+    this.cardVisualsMap.forEach((visual) => {
+      if (visual.anchor === 'deck') {
+          visual.anchorX = this.deckAnchorX * this.canvas.width;
+          visual.anchorY = this.deckAnchorY * this.canvas.height;
+      } else if (visual.anchor === 'hand_left') {
+          visual.anchorX = this.handAnchorLeftX * this.canvas.width;
+          visual.anchorY = this.handAnchorLeftY * this.canvas.height;
+      } else if (visual.anchor === 'hand_center') {
+          visual.nchorX = this.handAnchorCenterX * this.canvas.width;
+          visual.anchorY = this.handAnchorCenterY * this.canvas.height;
+      } else if (visual.anchor === 'hand_right') {
+          visual.anchorX = this.handAnchorRightX * this.canvas.width - this.cardWidth;
+          visual.anchorY = this.handAnchorRightY * this.canvas.height;
+      } else if (visual.anchor === 'pit') {
+        visual.anchorX = this.pitAnchorX * this.canvas.width;
+        visual.anchorY = this.pitAnchorY * this.canvas.height;
+      }
+    })
+  }
+
+
+  // updateCardXYToResize() {
+  //   this.cardXYMap.forEach((value, key) => {
+  //     value[0] = value[0]
+  //   })
+  // }
 
 }
