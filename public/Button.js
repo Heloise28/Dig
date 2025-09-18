@@ -63,11 +63,10 @@ export class Button {
     return false;
   }
 
-  handleMouseMove(mouseX, mouseY) {
+  handleHover(mouseX, mouseY) {
     if (!this.display) return false;
     if (this.isPointInside(mouseX, mouseY)) {
       this.isHovered = true;
-      console.log(`Is hovered : ${this.isHovered}`);
       return true;
     }
     this.isHovered = false;

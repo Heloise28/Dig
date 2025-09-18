@@ -47,6 +47,8 @@ async function main() {
       vm.setCurrentSeat(j);
       vm.setStartSeat(j);
       await vm.initGameSession(cardsToDeal);
+      vm.updatePlayerCards(gameSession.players[vm.mySeat].getHand().getCards());
+
       vm.setStage(10);
       vm.startMovingCards(cardsToDeal);
 

@@ -29,6 +29,8 @@ export class VisualManager {
     this.cardBackImage = null;
     this.cardXYMap = null;
     this.cardVisualsMap = new Map();
+    this.myCards=[]; // For my card selecting
+    this.cardHoverOffset = 50;
     
     // 0 -> main menu
     // 10 -> Start a game, deal cards, wait for bidding
@@ -61,7 +63,6 @@ export class VisualManager {
     console.log('Load all card image done!');
     this.initCardVisualsMap(this.allCardsToRender);
     this.setAllCardVisualOwners();
-
     this.setPositionOfSeats();
   }
 
@@ -71,12 +72,31 @@ export class VisualManager {
     const mouseY = event.offsetY;
 
     this.buttons.forEach((button) => {
-        if (button.handleMouseMove(mouseX, mouseY)) {
+        if (button.handleHover(mouseX, mouseY)) {
         // This is a common pattern for event handling.
         // Button click handled, re-render will be triggered by toggleLanguage
         }
       }
     );
+    
+    // Order Matters...
+    if (this.stage >= 10) {
+      for (let i = this.myCards.length - 1; i >= 0 ; i--) {
+        let visual = this.cardVisualsMap.get(this.myCards[i])
+        if (this.isPointInsideCard(visual, mouseX, mouseY)) {
+          if (!visual.isHovered) {
+            visual.isHovered = true;
+            this.displaceVisual(visual);
+
+          }
+        } else {
+          if (visual.isHovered) {            
+            visual.isHovered = false;
+            this.redisplaceVisual(visual);
+          }
+        }
+      }
+    }
 
   }
 
@@ -88,8 +108,6 @@ export class VisualManager {
 
     this.buttons.forEach((button) => {
         if (button.handleMouseUp(mouseX, mouseY)) {
-        // This is a common pattern for event handling.
-        // Button click handled, re-render will be triggered by toggleLanguage
         }
       }
     );
@@ -134,6 +152,8 @@ export class VisualManager {
   update() {
     if (this.stage === 10) {
       this.updateInitialDealingAnimation();
+    }
+    if (this.stage === 20) {
     }
   }
 
@@ -206,8 +226,8 @@ export class VisualManager {
       let targetX = visual.anchorX + visual.offsetX * visual.offsetTimesX;
       let targetY = visual.anchorY + visual.offsetY * visual.offsetTimesY;
 
-      let speedX = this.findSpeed(visual.x, targetX, 0.3);
-      let speedY = this.findSpeed(visual.y, targetY, 0.3);
+      let speedX = this.findSpeed(visual.x, targetX, 0.1);
+      let speedY = this.findSpeed(visual.y, targetY, 0.1);
 
       this.currentAnimatingCard = {
         card,
@@ -350,9 +370,9 @@ export class VisualManager {
     for (const card of this.allCardsToRender) {
       let visual = this.cardVisualsMap.get(card);
       if (visual.anchor === 'hand_left' || visual.anchor === 'hand_right') {
-        this.drawCardBackAnchor(card);
+        this.drawCardBackXY(card);
       } else {
-        this.drawCardFaceAnchor(card);
+        this.drawCardFaceXY(card);
       }
     }
   }
@@ -552,6 +572,7 @@ export class VisualManager {
     this.allCardsToRender = cards;
   }
 
+
   // Fetch visual informations here
   initCardVisualsMap(cards) {
     for (let i = 0; i < cards.length; i++) {
@@ -576,21 +597,24 @@ export class VisualManager {
           x: this.deckAnchorX * this.canvas.width,
           y: this.deckAnchorY * this.canvas.height,
 
+          isHovered: false,
+
           onMouseUp: () => { /* ... */ },
-          onHover: () => { /* ... */ },
         }
       )
     }
   }
 
-  setCardVisualsOwner(card, seat) {
-    this.cardVisualsMap.get(card).seatOfOwner = seat;
-  }
 
+  // Only works (and needed in game init)
   setAllCardVisualOwners() {
     for (let i = 0; i < 48; i++) {
       this.setCardVisualsOwner(this.allCardsToRender[i], (this.currentSeat + i) % 3);
     }
+  }
+
+  setCardVisualsOwner(card, seat) {
+    this.cardVisualsMap.get(card).seatOfOwner = seat;
   }
 
   setCardVisualAnchor(card, anchor, times) {
@@ -659,6 +683,27 @@ export class VisualManager {
     })
   }
 
+  isPointInsideCard(visual, mouseX, mouseY) {
+    return (mouseX > visual.x && mouseX < visual.x + this.cardWidth && mouseY > visual.y && mouseY < visual.y + this.cardHeight);
+  }
+
+  isPointInsideCardVisible(visual, mouseX, mouseY) {
+    return (mouseX > visual.x && mouseX < visual.x + this.cardVisibleWidth && mouseY > visual.y && mouseY < visual.x + this.cardHeight);
+  }
+
+  displaceVisual(visual) {
+    visual.y -= this.cardHoverOffset;
+    // visual.anchorY -= this.cardHoverOffset;
+  }
+
+  redisplaceVisual(visual) {
+    visual.y += this.cardHoverOffset;
+    // visual.anchorY += this.cardHoverOffset;
+  }
+
+  updatePlayerCards(cards) {
+    this.myCards = cards;
+  }
 
   // updateCardXYToResize() {
   //   this.cardXYMap.forEach((value, key) => {
